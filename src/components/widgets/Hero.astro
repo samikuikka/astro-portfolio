@@ -4,10 +4,15 @@ import heroImage from "../../assets/images/hero.svg";
 ---
 
 <section class="relative h-screen overflow-hidden not-prose max-h-screen">
-  <div class="absolute bottom-0 w-full pointer-events-none" aria-hidden="true">
-    <div class="m-auto w-full">
-      <Image src={heroImage} alt="hero image" class="w-full" />
-    </div>
+  <div
+    class="absolute bottom-0 left-0 w-full pointer-events-none overflow-hidden"
+    aria-hidden="true"
+  >
+    <Image
+      src={heroImage}
+      alt="hero image"
+      class="w-[200%] relative left-0 max-w-none animate-wave"
+    />
   </div>
   <div class="relative max-w-7xl mx-auto px-4 sm:px-6">
     <div class="pt-0 md:pt-[76px] pointer-events-none"></div>

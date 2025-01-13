@@ -31,12 +31,17 @@ export default {
 
       animation: {
         fade: "fadeInUp 1s both",
+        wave: "wave 10s forwards",
       },
 
       keyframes: {
         fadeInUp: {
           "0%": { opacity: 0, transform: "translateY(2rem)" },
           "100%": { opacity: 1, transform: "translateY(0)" },
+        },
+        wave: {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
         },
       },
     },
