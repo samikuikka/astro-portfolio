@@ -34,6 +34,7 @@ export default {
         wave: "wave 7s forwards",
         waveFast: "wave 5s forwards",
         waveSlower: "wave 10s forwards",
+        waveVeryFast: "wave 3s forwards",
       },
 
       keyframes: {
