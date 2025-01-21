@@ -31,7 +31,9 @@ export default {
 
       animation: {
         fade: "fadeInUp 1s both",
-        wave: "wave 10s forwards",
+        wave: "wave 7s forwards",
+        waveFast: "wave 5s forwards",
+        waveSlower: "wave 10s forwards",
       },
 
       keyframes: {
