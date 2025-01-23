@@ -1,0 +1,13 @@
+.neonHex {
+  stroke-dasharray: 6;
+  animation: dashAnimation 2s linear infinite;
+}
+
+@keyframes dashAnimation {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 12;
+  }
+}

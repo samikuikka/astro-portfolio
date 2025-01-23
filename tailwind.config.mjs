@@ -14,8 +14,6 @@ export default {
           default: "#0a0833",
           fast: "#00010e",
         },
-        primary: "#200052",
-        accent: "#0a0833",
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
@@ -77,9 +75,18 @@ export default {
         wave: "wave 7s forwards",
         waveFast: "wave 5s forwards",
         waveSlower: "wave 10s forwards",
+        neonHex: "neonHex 2s linear infinite",
         waveVeryFast: "wave 3s forwards",
       },
       keyframes: {
+        dashAnimation: {
+          "0%": {
+            strokeDashoffset: 0,
+          },
+          "100%": {
+            strokeDashoffset: 12,
+          },
+        },
         fadeInUp: {
           "0%": {
             opacity: 0,
