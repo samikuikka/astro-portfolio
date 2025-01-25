@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useRef, useState, useEffect, type RefCallback } from "react";
 import { motion, useInView } from "framer-motion";
 import { cn } from "~/lib/utils";
@@ -12,13 +10,9 @@ interface StickyScrollItem {
 
 export function StickyScroll({ content }: { content: StickyScrollItem[] }) {
   const [activeCard, setActiveCard] = useState(0);
-
-  // We'll measure each section's top offset so bullets can align exactly
   const [sectionOffsets, setSectionOffsets] = useState<number[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
-
-  // Keep an animated fill height
   const [fillHeight, setFillHeight] = useState(0);
 
   // Prepare an array of refs, one per item
@@ -41,13 +35,8 @@ export function StickyScroll({ content }: { content: StickyScrollItem[] }) {
     setSectionOffsets(offsets);
   }, []);
 
-  // Whenever the user hits a new activeCard, update fillHeight
-  // so the purple "fill line" extends to that bullet’s offset.
   useEffect(() => {
     if (sectionOffsets.length === 0) return;
-    // Basic approach: fill up to the offset of the current bullet.
-    // You could also add a small offset if you want it to go
-    // exactly to bullet center, etc.
     const newHeight = sectionOffsets[activeCard] ?? 0;
     setFillHeight(newHeight);
   }, [activeCard, sectionOffsets]);
