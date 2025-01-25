@@ -13,37 +13,11 @@ interface SkillCategory {
   skills: Skill[];
 }
 
-const skillCategories: SkillCategory[] = [
-  {
-    name: "Frontend",
-    color: "#ff6b6b",
-    skills: [
-      { name: "React", level: 5 },
-      { name: "Vue", level: 4 },
-      { name: "CSS", level: 4 },
-    ],
-  },
-  {
-    name: "Backend",
-    color: "#4ecdc4",
-    skills: [
-      { name: "Node.js", level: 5 },
-      { name: "Python", level: 4 },
-      { name: "SQL", level: 4 },
-    ],
-  },
-  {
-    name: "DevOps",
-    color: "#feca57",
-    skills: [
-      { name: "Docker", level: 3 },
-      { name: "AWS", level: 4 },
-      { name: "CI/CD", level: 3 },
-    ],
-  },
-];
-
-export default function SkillTree() {
+export default function SkillTree({
+  skillCategories,
+}: {
+  skillCategories: SkillCategory[];
+}) {
   const svgSize = Math.min(window.innerWidth * 0.8, 800); // Dynamic size, max 800px
   const centerX = svgSize / 2;
   const centerY = svgSize / 2;
