@@ -1,6 +1,7 @@
-import { motion, useScroll, useTransform } from "framer-motion";
-import React, { useEffect, useRef, useState } from "react";
-import { useInView } from "framer-motion";
+"use client";
+
+import React, { useRef, useState, useEffect, type RefCallback } from "react";
+import { motion, useInView } from "framer-motion";
 import { cn } from "~/lib/utils";
 
 interface StickyScrollItem {
@@ -9,44 +10,67 @@ interface StickyScrollItem {
   content?: React.ReactNode;
 }
 
-export function StickyScroll({ content }) {
+export function StickyScroll({ content }: { content: StickyScrollItem[] }) {
   const [activeCard, setActiveCard] = useState(0);
 
+  // We'll measure each section's top offset so bullets can align exactly
   const [sectionOffsets, setSectionOffsets] = useState<number[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
-  const sectionRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+  // Keep an animated fill height
+  const [fillHeight, setFillHeight] = useState(0);
+
+  // Prepare an array of refs, one per item
   useEffect(() => {
     sectionRefs.current = sectionRefs.current.slice(0, content.length);
   }, [content.length]);
 
+  // Measure offsets once the component mounts
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // getBoundingClientRect of the parent
     const parentRect = containerRef.current.getBoundingClientRect();
-
     const offsets = sectionRefs.current.map((section) => {
       if (!section) return 0;
       const rect = section.getBoundingClientRect();
-      // position of the section top relative to the parent top
+      // top of section relative to the parent's top
       return rect.top - parentRect.top;
     });
 
     setSectionOffsets(offsets);
   }, []);
 
+  // Whenever the user hits a new activeCard, update fillHeight
+  // so the purple "fill line" extends to that bullet’s offset.
+  useEffect(() => {
+    if (sectionOffsets.length === 0) return;
+    // Basic approach: fill up to the offset of the current bullet.
+    // You could also add a small offset if you want it to go
+    // exactly to bullet center, etc.
+    const newHeight = sectionOffsets[activeCard] ?? 0;
+    setFillHeight(newHeight);
+  }, [activeCard, sectionOffsets]);
+
   return (
     <div
-      className="relative w-full flex justify-center px-10 pt-[22vh]"
       ref={containerRef}
+      className="relative w-full flex justify-center px-10 pt-[22vh]"
     >
-      {/* LEFT SIDE: the line & bullets */}
+      {/* LEFT SIDE: The main static line and bullets */}
       <div className="relative mr-10">
-        {/* The line */}
+        {/* 1) The static vertical line */}
         <div className="absolute left-2 top-0 bottom-0 w-[2px] bg-neutral-500" />
 
-        {/* The bullets, each positioned at the measured offset */}
+        {/* 2) The animated fill line */}
+        <motion.div
+          // pinned to the top-left of that same line
+          className="absolute left-2 top-0 w-[2px] bg-purple-500"
+          animate={{ height: fillHeight }}
+          transition={{ type: "spring", duration: 0.5 }}
+        />
+
+        {/* 3) The bullets, each placed at the measured offset */}
         {sectionOffsets.map((offset, idx) => (
           <div
             key={idx}
@@ -69,7 +93,7 @@ export function StickyScroll({ content }) {
         ))}
       </div>
 
-      {/* MIDDLE COLUMN: the text sections */}
+      {/* MIDDLE COLUMN: The text sections */}
       <div className="max-w-xl w-full">
         {content.map((item, index) => (
           <ScrollSection
@@ -101,7 +125,7 @@ function ScrollSection({
   index: number;
   item: { title: string; description: string };
   setActiveCard: (i: number) => void;
-  divRef: React.RefCallback<HTMLDivElement>;
+  divRef: RefCallback<HTMLDivElement>;
 }) {
   const isInViewRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(isInViewRef, {
@@ -109,12 +133,13 @@ function ScrollSection({
   });
 
   useEffect(() => {
-    if (isInView) setActiveCard(index);
+    if (isInView) {
+      setActiveCard(index);
+    }
   }, [isInView, index, setActiveCard]);
 
   return (
     <div
-      // forward the ref for measuring position
       ref={(el) => {
         divRef(el);
         isInViewRef.current = el;
