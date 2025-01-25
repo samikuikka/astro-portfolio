@@ -35,6 +35,7 @@ export function StickyScroll({ content }: { content: StickyScrollItem[] }) {
     setSectionOffsets(offsets);
   }, []);
 
+  // Update the fill height when the active card changes
   useEffect(() => {
     if (sectionOffsets.length === 0) return;
     const newHeight = sectionOffsets[activeCard] ?? 0;
@@ -53,7 +54,6 @@ export function StickyScroll({ content }: { content: StickyScrollItem[] }) {
 
         {/* 2) The animated fill line */}
         <motion.div
-          // pinned to the top-left of that same line
           className="absolute left-2 top-0 w-[2px] bg-purple-500"
           animate={{ height: fillHeight }}
           transition={{ type: "spring", duration: 0.5 }}
@@ -98,12 +98,77 @@ export function StickyScroll({ content }: { content: StickyScrollItem[] }) {
       </div>
 
       {/* RIGHT SIDE: skill tree or sticky content */}
-      <div className="hidden lg:block border border-red-500 h-full max-h-2xl w-full max-w-xl rounded-md sticky top-1/2 -translate-y-1/2 overflow-hidden">
-        {content[activeCard]?.content ?? null}
-      </div>
+      <Card className="hidden lg:block border h-full max-h-2xl w-full max-w-xl rounded-md sticky top-1/2 -translate-y-1/2 overflow-hidden">
+        <CardSkeletonContainer>
+          <div
+            className={cn(
+              " border - [rgba(255, 255, 255, 0.1)] rounded-xl border shadow-[2px_4px_16px_0px_rgba(248,248,248,0.06)_inset] group "
+            )}
+          >
+            {content[activeCard]?.content ?? null}
+          </div>
+        </CardSkeletonContainer>
+      </Card>
     </div>
   );
 }
+
+export const Card = ({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) => {
+  return (
+    <div
+      className={cn(
+        " hidden lg:block h-full w-full mx-auto  rounded-xl border border-[rgba(255,255,255,0.10)] dark:bg-[rgba(40,40,40,0.70)] bg-gray-100 shadow-[2px_4px_16px_0px_rgba(248,248,248,0.06)_inset] group",
+        className
+      )}
+    >
+      <div
+        className={cn(
+          "absolute p-1 [mask-image:radial-gradient(50%_50%_at_50%_50%,white_0%,transparent_100%)] inset-0 grid grid-cols-50 grid-rows-50 gap-0.5 pointer-events-none"
+        )}
+        style={{
+          gridTemplateColumns: "repeat(50, 1fr)", // 50 columns
+          gridTemplateRows: "repeat(50, 1fr)", // 100 rows
+        }}
+      >
+        {Array.from({ length: 2500 }).map((_, idx) => (
+          <div
+            key={idx}
+            className="w-full h-full bg-gray-200 dark:bg-gray-700/70 opacity-20 rounded-sm"
+          />
+        ))}
+      </div>
+      {children}
+    </div>
+  );
+};
+
+export const CardSkeletonContainer = ({
+  className,
+  children,
+  showGradient = true,
+}: {
+  className?: string;
+  children: React.ReactNode;
+  showGradient?: boolean;
+}) => {
+  return (
+    <div
+      className={cn(
+        "h-full  rounded-xl z-40",
+        className,
+        showGradient && "bg-neutral-300 dark:bg-[rgba(40,40,40,0.70)]"
+      )}
+    >
+      {children}
+    </div>
+  );
+};
 
 function ScrollSection({
   index,
