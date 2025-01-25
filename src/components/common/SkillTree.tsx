@@ -1,17 +1,7 @@
-import React, { type JSX } from "react";
+import { type JSX } from "react";
 import Hexagon from "./Hexagon";
 import profilePic from "../../assets/images/profile-pic.png";
-
-interface Skill {
-  name: string;
-  level: number;
-}
-
-interface SkillCategory {
-  name: string;
-  color: string;
-  skills: Skill[];
-}
+import type { SkillCategory } from "~/types/skills";
 
 export default function SkillTree({
   skillCategories,

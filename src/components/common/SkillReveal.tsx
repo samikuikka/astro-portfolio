@@ -1,14 +1,6 @@
+import type { SkillCategory } from "~/types/skills";
 import { StickyScroll } from "../ui/sticky-scroll-reveal";
 import SkillTree from "./SkillTree";
-interface SkillCategory {
-  name: string;
-  color: string;
-  skills: Skill[];
-}
-interface Skill {
-  name: string;
-  level: number;
-}
 
 const skillTree2019: SkillCategory[] = [
   {
