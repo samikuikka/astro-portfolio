@@ -123,7 +123,7 @@ export const Card = ({
   return (
     <div
       className={cn(
-        " hidden lg:block h-full w-full mx-auto  rounded-xl border border-[rgba(255,255,255,0.10)] dark:bg-[rgba(40,40,40,0.70)] bg-gray-100 shadow-[2px_4px_16px_0px_rgba(248,248,248,0.06)_inset] group",
+        " hidden lg:block h-full w-full mx-auto  rounded-xl border border-[rgba(255,255,255,0.10)] bg-[rgba(40,40,40,0.70)]  shadow-[2px_4px_16px_0px_rgba(248,248,248,0.06)_inset] group",
         className
       )}
     >
@@ -132,14 +132,14 @@ export const Card = ({
           "absolute p-1 [mask-image:radial-gradient(50%_50%_at_50%_50%,white_0%,transparent_100%)] inset-0 grid grid-cols-50 grid-rows-50 gap-0.5 pointer-events-none"
         )}
         style={{
-          gridTemplateColumns: "repeat(50, 1fr)", // 50 columns
-          gridTemplateRows: "repeat(50, 1fr)", // 100 rows
+          gridTemplateColumns: "repeat(50, 1fr)",
+          gridTemplateRows: "repeat(50, 1fr)",
         }}
       >
         {Array.from({ length: 2500 }).map((_, idx) => (
           <div
             key={idx}
-            className="w-full h-full bg-gray-200 dark:bg-gray-700/70 opacity-20 rounded-sm"
+            className="w-full h-full bg-[#00010e] opacity-20 rounded-sm"
           />
         ))}
       </div>
@@ -162,7 +162,7 @@ export const CardSkeletonContainer = ({
       className={cn(
         "h-full  rounded-xl z-40",
         className,
-        showGradient && "bg-neutral-300 dark:bg-[rgba(40,40,40,0.70)]"
+        showGradient && "bg-[rgba(40,40,40,0.70)]"
       )}
     >
       {children}
