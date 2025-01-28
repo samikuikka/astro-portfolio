@@ -1,4 +1,10 @@
-import React, { useRef, useState, useEffect, type RefCallback } from "react";
+import React, {
+  useRef,
+  useState,
+  useLayoutEffect,
+  type RefCallback,
+  useEffect,
+} from "react";
 import { motion, useInView } from "framer-motion";
 import { cn } from "~/lib/utils";
 
@@ -22,12 +28,12 @@ export function StickyScroll({
   const [fillHeight, setFillHeight] = useState(0);
 
   // Prepare an array of refs, one per item
-  useEffect(() => {
+  useLayoutEffect(() => {
     sectionRefs.current = sectionRefs.current.slice(0, content.length);
   }, [content.length]);
 
-  // Measure offsets once the component mounts
-  useEffect(() => {
+  // Measure offsets after all sections have been rendered
+  useLayoutEffect(() => {
     if (!containerRef.current) return;
 
     const parentRect = containerRef.current.getBoundingClientRect();
@@ -39,7 +45,7 @@ export function StickyScroll({
     });
 
     setSectionOffsets(offsets);
-  }, []);
+  }, [content.length]);
 
   // Update the fill height when the active card changes
   useEffect(() => {
@@ -112,7 +118,7 @@ export function StickyScroll({
         <CardSkeletonContainer>
           <div
             className={cn(
-              " border - [rgba(255, 255, 255, 0.1)] rounded-xl border shadow-[2px_4px_16px_0px_rgba(248,248,248,0.06)_inset] group "
+              "border-[rgba(255, 255, 255, 0.1)] rounded-xl border shadow-[2px_4px_16px_0px_rgba(248,248,248,0.06)_inset] group"
             )}
           >
             {content[activeCard]?.content ?? null}
@@ -133,7 +139,7 @@ export const Card = ({
   return (
     <div
       className={cn(
-        " hidden lg:block h-full w-full mx-auto  rounded-xl border border-[rgba(255,255,255,0.10)] bg-[rgba(40,40,40,0.70)]  shadow-[2px_4px_16px_0px_rgba(248,248,248,0.06)_inset] group",
+        "hidden lg:block h-full w-full mx-auto rounded-xl border border-[rgba(255,255,255,0.10)] bg-[rgba(40,40,40,0.70)] shadow-[2px_4px_16px_0px_rgba(248,248,248,0.06)_inset] group",
         className
       )}
     >
@@ -170,7 +176,7 @@ export const CardSkeletonContainer = ({
   return (
     <div
       className={cn(
-        "h-full  rounded-xl z-40",
+        "h-full rounded-xl z-40",
         className,
         showGradient && "bg-[rgba(40,40,40,0.70)]"
       )}

@@ -1,10 +1,11 @@
-import { type JSX } from "react";
+// src/components/SkillTree.jsx
 import { motion } from "framer-motion";
 import Hexagon from "./Hexagon";
 import profilePic from "../../assets/images/profile-pic.png";
+import type { JSX } from "react";
 
 const SkillTree = ({ skillCategories, currentYear }) => {
-  const svgSize = Math.min(window.innerWidth * 0.8, 800); // Dynamic size, max 800px
+  const svgSize = Math.min(window.innerWidth * 0.8, 800);
   const centerX = svgSize / 2;
   const centerY = svgSize / 2;
   const mainHexSize = svgSize * 0.1;
@@ -47,6 +48,12 @@ const SkillTree = ({ skillCategories, currentYear }) => {
         <g>
           {/* Draw the category and skill lines, then hexagons, for each category */}
           {skillCategories.map((category, categoryIndex) => {
+            // **Compute the unlock year for the category**
+            const categoryYear = Math.min(
+              ...category.skills.map((skill) => skill.year)
+            );
+            const isCategoryUnlocked = categoryYear <= currentYear;
+
             const categoryPos = getPosition(
               categoryIndex + 1,
               skillCategories.length,
@@ -55,7 +62,7 @@ const SkillTree = ({ skillCategories, currentYear }) => {
             const lines: JSX.Element[] = [];
             const hexes: JSX.Element[] = [];
 
-            // Line from center to category
+            // **Line from center to category, visibility based on category unlock**
             lines.push(
               <motion.line
                 key={`${category.name}-center-line`}
@@ -65,18 +72,21 @@ const SkillTree = ({ skillCategories, currentYear }) => {
                 y2={categoryPos.y}
                 stroke={category.color}
                 strokeWidth="2"
-                initial={{ opacity: 0.2, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0.2 }}
+                animate={{ opacity: isCategoryUnlocked ? 1 : 0.2 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
               />
             );
 
-            // Category Hexagon
+            // **Category Hexagon, visibility based on category unlock**
             hexes.push(
               <motion.g
                 key={`${category.name}-hex`}
                 initial={{ opacity: 0.2, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
+                animate={{
+                  opacity: isCategoryUnlocked ? 1 : 0.2,
+                  scale: isCategoryUnlocked ? 1 : 0.5,
+                }}
                 transition={{
                   duration: 0.5,
                   ease: "easeOut",
@@ -103,7 +113,7 @@ const SkillTree = ({ skillCategories, currentYear }) => {
               </motion.g>
             );
 
-            // Skill Nodes
+            // **Skill Nodes, visibility based on skill unlock**
             category.skills.forEach((skill, skillIndex) => {
               const isUnlocked = skill.year <= currentYear;
 
@@ -115,7 +125,7 @@ const SkillTree = ({ skillCategories, currentYear }) => {
                 skillRadius
               );
 
-              // Line from category to skill
+              // **Line from category to skill, visibility based on skill unlock**
               lines.push(
                 <motion.line
                   key={`${skill.name}-line`}
@@ -125,16 +135,13 @@ const SkillTree = ({ skillCategories, currentYear }) => {
                   y2={skillPos.y}
                   stroke={category.color}
                   strokeWidth="1"
-                  initial={{ opacity: 0.2, scale: 0.8 }}
-                  animate={{
-                    opacity: isUnlocked ? 1 : 0.2,
-                    scale: isUnlocked ? 1 : 0.8,
-                  }}
+                  initial={{ opacity: 0.2 }}
+                  animate={{ opacity: isUnlocked ? 1 : 0.2 }}
                   transition={{ duration: 0.5, ease: "easeOut" }}
                 />
               );
 
-              // Skill Hexagon
+              // **Skill Hexagon, visibility based on skill unlock**
               hexes.push(
                 <motion.g
                   key={`${skill.name}-hex`}
@@ -197,9 +204,7 @@ const SkillTree = ({ skillCategories, currentYear }) => {
               y={centerY - mainHexSize / 2}
               width={mainHexSize * 1.7}
               height={mainHexSize * 1.7}
-              transform={`translate(-${mainHexSize * 0.4}, -${
-                mainHexSize * 0.5
-              })`}
+              transform={`translate(-${mainHexSize * 0.4}, -${mainHexSize * 0.5})`}
             >
               <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center">
                 <img

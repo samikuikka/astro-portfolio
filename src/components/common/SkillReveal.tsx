@@ -3,7 +3,6 @@ import { useState } from "react";
 import { StickyScroll } from "../ui/sticky-scroll-reveal";
 import SkillTree from "./SkillTree";
 
-// src/data/skills.js
 export const allSkillCategories = [
   {
     name: "Frontend",
@@ -34,8 +33,12 @@ export const allSkillCategories = [
   },
 ];
 
-
 const years = [
+  {
+    title: "Introduction",
+    description: "Initial State - No Skills Unlocked.",
+    year: 0,
+  },
   {
     title: "Collaborative Editing",
     description: "Year 2019 - Core Frontend Skills.",
@@ -55,7 +58,6 @@ const years = [
 
 const SkillReveal = () => {
   const [activeYearIndex, setActiveYearIndex] = useState(0);
-  const currentYear = years[activeYearIndex].year;
 
   const content = years.map((yearContent, index) => ({
     title: yearContent.title,
