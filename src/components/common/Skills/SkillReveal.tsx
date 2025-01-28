@@ -1,6 +1,6 @@
 // src/components/SkillReveal.jsx
 import { useState } from "react";
-import { StickyScroll } from "../ui/sticky-scroll-reveal";
+import { StickyScroll } from "../../ui/sticky-scroll-reveal";
 import SkillTree from "./SkillTree";
 
 export const allSkillCategories = [

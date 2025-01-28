@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { motion } from "framer-motion";
 import Hexagon from "./Hexagon";
-import profilePic from "../../assets/images/profile-pic.png";
+import profilePic from "../../../assets/images/profile-pic.png";
 import CategoryNode from "./CategoryNode";
 import SkillNode from "./SkillNode";
 
