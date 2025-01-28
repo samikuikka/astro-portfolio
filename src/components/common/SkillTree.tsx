@@ -1,11 +1,33 @@
-// src/components/SkillTree.jsx
+import React, { useMemo } from "react";
 import { motion } from "framer-motion";
 import Hexagon from "./Hexagon";
 import profilePic from "../../assets/images/profile-pic.png";
-import type { JSX } from "react";
+import CategoryNode from "./CategoryNode";
+import SkillNode from "./SkillNode";
 
-const SkillTree = ({ skillCategories, currentYear }) => {
-  const svgSize = Math.min(window.innerWidth * 0.8, 800);
+interface Skill {
+  name: string;
+  level: number;
+  year: number;
+}
+
+interface SkillCategory {
+  name: string;
+  color: string;
+  skills: Skill[];
+}
+
+interface SkillTreeProps {
+  skillCategories: SkillCategory[];
+  currentYear: number;
+}
+
+const SkillTree: React.FC<SkillTreeProps> = ({
+  skillCategories,
+  currentYear,
+}) => {
+  // Calculate SVG size
+  const svgSize = useMemo(() => Math.min(window.innerWidth * 0.8, 800), []);
   const centerX = svgSize / 2;
   const centerY = svgSize / 2;
   const mainHexSize = svgSize * 0.1;
@@ -14,7 +36,13 @@ const SkillTree = ({ skillCategories, currentYear }) => {
   const categoryRadius = svgSize * 0.2;
   const skillRadius = svgSize * 0.35;
 
-  const getPosition = (index, total, radius, offset = 0) => {
+  // Function to calculate position
+  const getPosition = (
+    index: number,
+    total: number,
+    radius: number,
+    offset: number = 0
+  ) => {
     const angle = ((index - 1) * (2 * Math.PI)) / total - Math.PI / 2;
     return {
       x: centerX + (radius + offset) * Math.cos(angle),
@@ -46,9 +74,8 @@ const SkillTree = ({ skillCategories, currentYear }) => {
         </defs>
 
         <g>
-          {/* Draw the category and skill lines, then hexagons, for each category */}
+          {/* Category and Skill Nodes */}
           {skillCategories.map((category, categoryIndex) => {
-            // **Compute the unlock year for the category**
             const categoryYear = Math.min(
               ...category.skills.map((skill) => skill.year)
             );
@@ -59,128 +86,73 @@ const SkillTree = ({ skillCategories, currentYear }) => {
               skillCategories.length,
               categoryRadius
             );
-            const lines: JSX.Element[] = [];
-            const hexes: JSX.Element[] = [];
-
-            // **Line from center to category, visibility based on category unlock**
-            lines.push(
-              <motion.line
-                key={`${category.name}-center-line`}
-                x1={centerX}
-                y1={centerY}
-                x2={categoryPos.x}
-                y2={categoryPos.y}
-                stroke={category.color}
-                strokeWidth="2"
-                initial={{ opacity: 0.2 }}
-                animate={{ opacity: isCategoryUnlocked ? 1 : 0.2 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-              />
-            );
-
-            // **Category Hexagon, visibility based on category unlock**
-            hexes.push(
-              <motion.g
-                key={`${category.name}-hex`}
-                initial={{ opacity: 0.2, scale: 0.5 }}
-                animate={{
-                  opacity: isCategoryUnlocked ? 1 : 0.2,
-                  scale: isCategoryUnlocked ? 1 : 0.5,
-                }}
-                transition={{
-                  duration: 0.5,
-                  ease: "easeOut",
-                  delay: categoryIndex * 0.2,
-                }}
-              >
-                <Hexagon
-                  x={categoryPos.x}
-                  y={categoryPos.y}
-                  size={categoryHexSize}
-                  fill="rgba(0,0,0,1)"
-                  stroke={category.color}
-                  strokeWidth={2}
-                />
-                <text
-                  x={categoryPos.x}
-                  y={categoryPos.y + 5}
-                  textAnchor="middle"
-                  fill="white"
-                  fontSize="14"
-                >
-                  {category.name}
-                </text>
-              </motion.g>
-            );
-
-            // **Skill Nodes, visibility based on skill unlock**
-            category.skills.forEach((skill, skillIndex) => {
-              const isUnlocked = skill.year <= currentYear;
-
-              const skillAngleOffset =
-                (skillIndex - (category.skills.length - 1) / 2) * 0.3;
-              const skillPos = getPosition(
-                categoryIndex + 1 + skillAngleOffset,
-                skillCategories.length,
-                skillRadius
-              );
-
-              // **Line from category to skill, visibility based on skill unlock**
-              lines.push(
-                <motion.line
-                  key={`${skill.name}-line`}
-                  x1={categoryPos.x}
-                  y1={categoryPos.y}
-                  x2={skillPos.x}
-                  y2={skillPos.y}
-                  stroke={category.color}
-                  strokeWidth="1"
-                  initial={{ opacity: 0.2 }}
-                  animate={{ opacity: isUnlocked ? 1 : 0.2 }}
-                  transition={{ duration: 0.5, ease: "easeOut" }}
-                />
-              );
-
-              // **Skill Hexagon, visibility based on skill unlock**
-              hexes.push(
-                <motion.g
-                  key={`${skill.name}-hex`}
-                  initial={{ opacity: 0.2, scale: 0.5 }}
-                  animate={{
-                    opacity: isUnlocked ? 1 : 0.2,
-                    scale: isUnlocked ? 1 : 0.5,
-                  }}
-                  transition={{
-                    duration: 0.5,
-                    ease: "easeOut",
-                    delay: skillIndex * 0.1,
-                  }}
-                >
-                  <Hexagon
-                    x={skillPos.x}
-                    y={skillPos.y}
-                    size={skillHexSize}
-                    fill="rgba(0,0,0,1)"
-                    stroke={category.color}
-                    strokeWidth={1.5}
-                  />
-                  <text
-                    x={skillPos.x}
-                    y={skillPos.y + 4}
-                    textAnchor="middle"
-                    fill="white"
-                    fontSize="12"
-                  >
-                    {skill.name}
-                  </text>
-                </motion.g>
-              );
-            });
 
             return (
               <g key={category.name}>
-                {lines}
-                {hexes}
+                {/* Line from center to category */}
+                <motion.line
+                  x1={centerX}
+                  y1={centerY}
+                  x2={categoryPos.x}
+                  y2={categoryPos.y}
+                  stroke={category.color}
+                  strokeWidth="2"
+                  initial={{ opacity: 0.2 }}
+                  animate={{ opacity: isCategoryUnlocked ? 1 : 0.2 }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                />
+
+                {/* Category Node */}
+                <CategoryNode
+                  x={categoryPos.x}
+                  y={categoryPos.y}
+                  size={categoryHexSize}
+                  color={category.color}
+                  name={category.name}
+                  isUnlocked={isCategoryUnlocked}
+                  delay={categoryIndex * 0.2}
+                />
+
+                {/* Skill Nodes */}
+                {category.skills.map((skill, skillIndex) => {
+                  const isUnlocked = skill.year <= currentYear;
+                  const skillAngleOffset =
+                    (skillIndex - (category.skills.length - 1) / 2) * 0.3;
+                  const skillPos = getPosition(
+                    categoryIndex + 1 + skillAngleOffset,
+                    skillCategories.length,
+                    skillRadius
+                  );
+
+                  return (
+                    <g key={skill.name}>
+                      {/* Line from category to skill */}
+                      <motion.line
+                        x1={categoryPos.x}
+                        y1={categoryPos.y}
+                        x2={skillPos.x}
+                        y2={skillPos.y}
+                        stroke={category.color}
+                        strokeWidth="1"
+                        initial={{ opacity: 0.2 }}
+                        animate={{ opacity: isUnlocked ? 1 : 0.2 }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                      />
+
+                      {/* Skill Node */}
+                      <SkillNode
+                        x={skillPos.x}
+                        y={skillPos.y}
+                        size={skillHexSize}
+                        color={category.color}
+                        name={skill.name}
+                        isUnlocked={isUnlocked}
+                        delay={skillIndex * 0.1}
+                        level={skill.level}
+                      />
+                    </g>
+                  );
+                })}
               </g>
             );
           })}
