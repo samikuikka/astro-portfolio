@@ -1,27 +1,9 @@
-import React, { useEffect, useState, type JSX } from "react";
+import { type JSX } from "react";
 import { motion } from "framer-motion";
 import Hexagon from "./Hexagon";
 import profilePic from "../../assets/images/profile-pic.png";
-import type { SkillCategory } from "~/types/skills";
 
-export default function SkillTree({
-  skillCategories,
-  unlockedSkillsIndex,
-}: {
-  skillCategories: SkillCategory[];
-  unlockedSkillsIndex: number;
-}) {
-  const [unlockedSkills, setUnlockedSkills] = useState<string[]>([]);
-
-  useEffect(() => {
-    // Unlock all skills up to the current year
-    const newSkills = skillCategories
-      .slice(0, unlockedSkillsIndex + 1)
-      .flatMap((category) => category.skills.map((skill) => skill.name));
-
-    setUnlockedSkills(newSkills);
-  }, [unlockedSkillsIndex, skillCategories]);
-
+const SkillTree = ({ skillCategories, currentYear }) => {
   const svgSize = Math.min(window.innerWidth * 0.8, 800); // Dynamic size, max 800px
   const centerX = svgSize / 2;
   const centerY = svgSize / 2;
@@ -31,12 +13,7 @@ export default function SkillTree({
   const categoryRadius = svgSize * 0.2;
   const skillRadius = svgSize * 0.35;
 
-  const getPosition = (
-    index: number,
-    total: number,
-    radius: number,
-    offset: number = 0
-  ) => {
+  const getPosition = (index, total, radius, offset = 0) => {
     const angle = ((index - 1) * (2 * Math.PI)) / total - Math.PI / 2;
     return {
       x: centerX + (radius + offset) * Math.cos(angle),
@@ -47,7 +24,7 @@ export default function SkillTree({
   return (
     <div className="relative w-full max-w-4xl mx-auto">
       <svg viewBox={`0 0 ${svgSize} ${svgSize}`} className="w-full h-full">
-        {/* 1) Define the glow filter */}
+        {/* Define the glow filter */}
         <defs>
           <filter id="glowFilter" x="-50%" y="-50%" width="200%" height="200%">
             <feDropShadow
@@ -68,7 +45,7 @@ export default function SkillTree({
         </defs>
 
         <g>
-          {/* Draw the category + skill lines, then hexagons, for each category */}
+          {/* Draw the category and skill lines, then hexagons, for each category */}
           {skillCategories.map((category, categoryIndex) => {
             const categoryPos = getPosition(
               categoryIndex + 1,
@@ -78,7 +55,7 @@ export default function SkillTree({
             const lines: JSX.Element[] = [];
             const hexes: JSX.Element[] = [];
 
-            // 1) Push line from center to category
+            // Line from center to category
             lines.push(
               <motion.line
                 key={`${category.name}-center-line`}
@@ -88,17 +65,17 @@ export default function SkillTree({
                 y2={categoryPos.y}
                 stroke={category.color}
                 strokeWidth="2"
-                initial={{ opacity: 0, scale: 0.5 }}
+                initial={{ opacity: 0.2, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
               />
             );
 
-            // 2) Category Hexagon
+            // Category Hexagon
             hexes.push(
               <motion.g
                 key={`${category.name}-hex`}
-                initial={{ opacity: 0, scale: 0.5 }}
+                initial={{ opacity: 0.2, scale: 0.5 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{
                   duration: 0.5,
@@ -126,8 +103,10 @@ export default function SkillTree({
               </motion.g>
             );
 
-            // 3) Skill Nodes
+            // Skill Nodes
             category.skills.forEach((skill, skillIndex) => {
+              const isUnlocked = skill.year <= currentYear;
+
               const skillAngleOffset =
                 (skillIndex - (category.skills.length - 1) / 2) * 0.3;
               const skillPos = getPosition(
@@ -135,9 +114,8 @@ export default function SkillTree({
                 skillCategories.length,
                 skillRadius
               );
-              const isUnlocked = unlockedSkills.includes(skill.name);
 
-              // Line connecting category to skill
+              // Line from category to skill
               lines.push(
                 <motion.line
                   key={`${skill.name}-line`}
@@ -147,7 +125,7 @@ export default function SkillTree({
                   y2={skillPos.y}
                   stroke={category.color}
                   strokeWidth="1"
-                  initial={{ opacity: 0, scale: 0.5 }}
+                  initial={{ opacity: 0.2, scale: 0.8 }}
                   animate={{
                     opacity: isUnlocked ? 1 : 0.2,
                     scale: isUnlocked ? 1 : 0.8,
@@ -156,14 +134,14 @@ export default function SkillTree({
                 />
               );
 
-              // Skill hexagon (unlocks with animation)
+              // Skill Hexagon
               hexes.push(
                 <motion.g
                   key={`${skill.name}-hex`}
-                  initial={{ opacity: 0, scale: 0.5 }}
+                  initial={{ opacity: 0.2, scale: 0.5 }}
                   animate={{
                     opacity: isUnlocked ? 1 : 0.2,
-                    scale: isUnlocked ? 1 : 0.7,
+                    scale: isUnlocked ? 1 : 0.5,
                   }}
                   transition={{
                     duration: 0.5,
@@ -200,7 +178,7 @@ export default function SkillTree({
             );
           })}
 
-          {/* Finally, draw the center profile hex LAST so it appears on top of everything else */}
+          {/* Center Profile Hexagon */}
           <motion.g
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -236,4 +214,6 @@ export default function SkillTree({
       </svg>
     </div>
   );
-}
+};
+
+export default SkillTree;
