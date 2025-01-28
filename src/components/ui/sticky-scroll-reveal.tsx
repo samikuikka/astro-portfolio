@@ -8,7 +8,13 @@ interface StickyScrollItem {
   content?: React.ReactNode;
 }
 
-export function StickyScroll({ content }: { content: StickyScrollItem[] }) {
+export function StickyScroll({
+  content,
+  onActiveChange,
+}: {
+  content: StickyScrollItem[];
+  onActiveChange: (index: number) => void;
+}) {
   const [activeCard, setActiveCard] = useState(0);
   const [sectionOffsets, setSectionOffsets] = useState<number[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -41,6 +47,10 @@ export function StickyScroll({ content }: { content: StickyScrollItem[] }) {
     const newHeight = sectionOffsets[activeCard] ?? 0;
     setFillHeight(newHeight);
   }, [activeCard, sectionOffsets]);
+
+  useEffect(() => {
+    onActiveChange(activeCard);
+  }, [activeCard, onActiveChange]);
 
   return (
     <div
