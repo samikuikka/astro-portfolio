@@ -1,4 +1,3 @@
-// src/components/SkillReveal.jsx
 import { useState } from "react";
 import { StickyScroll } from "../../ui/sticky-scroll-reveal";
 import SkillTree from "./SkillTree";
@@ -9,50 +8,56 @@ export const allSkillCategories = [
     color: "#ff6b6b",
     skills: [
       { name: "React", level: 5, year: 2019 },
-      { name: "Vue", level: 4, year: 2019 },
-      { name: "CSS", level: 4, year: 2019 },
+      { name: "Next.js", level: 4, year: 2019 },
+      { name: "Astro", level: 4, year: 2019 },
+      { name: "Astro", level: 4, year: 2020 },
     ],
   },
   {
     name: "Backend",
     color: "#4ecdc4",
     skills: [
-      { name: "Node.js", level: 5, year: 2020 },
-      { name: "Python", level: 4, year: 2020 },
-      { name: "SQL", level: 4, year: 2020 },
+      { name: "Node.js", level: 5, year: 2019 },
+      { name: "Python", level: 4, year: 2021 },
+      { name: "Java", level: 4, year: 2021 },
+      { name: ".NET", level: 4, year: 2021 },
     ],
   },
   {
     name: "DevOps",
     color: "#feca57",
     skills: [
-      { name: "Docker", level: 3, year: 2021 },
-      { name: "AWS", level: 4, year: 2021 },
-      { name: "CI/CD", level: 3, year: 2021 },
+      { name: "Docker", level: 3, year: 2020 },
+      { name: "Kubernetes", level: 3, year: 2020 },
+      { name: "CI/CD", level: 3, year: 2020 },
     ],
   },
 ];
 
 const years = [
   {
-    title: "Introduction",
-    description: "Initial State - No Skills Unlocked.",
-    year: 0,
+    title: "Bachelor's Beginnings",
+    description:
+      "Started on a Bachelor's degree in Computer Science, laying the foundational knowledge with limited prior coding experience.",
+    year: 2015,
   },
   {
-    title: "Collaborative Editing",
-    description: "Year 2019 - Core Frontend Skills.",
+    title: "Mastering Web Technologies",
+    description:
+      "Pursued a Master's degree in Web Technologies, Applications, and Science. Developed a keen interest in web development, especially enjoying working with React, Next.js, Astro, and Node.js.",
     year: 2019,
   },
   {
-    title: "Real-time Changes",
-    description: "Year 2020 - Backend Added.",
-    year: 2020,
+    title: "Software Engineer at Vertex Systems",
+    description:
+      "Joined Vertex Systems as a full-time Software Engineer, focusing primarily on Angular frontend development. Completed a master thesis on service meshes and API gateways in Kubernetes, and became proficient with cloud-native technologies such as Kubernetes and Docker.",
+    year: 2021,
   },
   {
-    title: "Version Control",
-    description: "Year 2021 - DevOps Added.",
-    year: 2021,
+    title: "Full Stack Developer & Scrum Master",
+    description:
+      "Transitioned to a Full Stack Developer role, gaining proficiency in Java, .NET, and Python. Took on Scrum Master responsibilities to enhance team collaboration and project management.",
+    year: 2023,
   },
 ];
 

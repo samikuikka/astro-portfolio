@@ -31,8 +31,8 @@ const SkillTree: React.FC<SkillTreeProps> = ({
   const centerX = svgSize / 2;
   const centerY = svgSize / 2;
   const mainHexSize = svgSize * 0.1;
-  const categoryHexSize = svgSize * 0.08;
-  const skillHexSize = svgSize * 0.07;
+  const categoryHexSize = svgSize * 0.06;
+  const skillHexSize = svgSize * 0.05;
   const categoryRadius = svgSize * 0.2;
   const skillRadius = svgSize * 0.35;
 
@@ -74,6 +74,64 @@ const SkillTree: React.FC<SkillTreeProps> = ({
         </defs>
 
         <g>
+          {/* Category and Skill Lines */}
+          {skillCategories.map((category, categoryIndex) => {
+            const categoryYear = Math.min(
+              ...category.skills.map((skill) => skill.year)
+            );
+            const isCategoryUnlocked = categoryYear <= currentYear;
+
+            const categoryPos = getPosition(
+              categoryIndex + 1,
+              skillCategories.length,
+              categoryRadius
+            );
+
+            return (
+              <g key={`lines-${category.name}`}>
+                {/* Line from center to category */}
+                <motion.line
+                  x1={centerX}
+                  y1={centerY}
+                  x2={categoryPos.x}
+                  y2={categoryPos.y}
+                  stroke={category.color}
+                  strokeWidth="2"
+                  initial={{ opacity: 0.2 }}
+                  animate={{ opacity: isCategoryUnlocked ? 1 : 0.2 }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                />
+
+                {/* Lines from category to skills */}
+                {category.skills.map((skill, skillIndex) => {
+                  const isUnlocked = skill.year <= currentYear;
+                  const skillAngleOffset =
+                    (skillIndex - (category.skills.length - 1) / 2) * 0.2;
+                  const skillPos = getPosition(
+                    categoryIndex + 1 + skillAngleOffset,
+                    skillCategories.length,
+                    skillRadius
+                  );
+
+                  return (
+                    <motion.line
+                      key={`line-${category.name}-${skill.name}`}
+                      x1={categoryPos.x}
+                      y1={categoryPos.y}
+                      x2={skillPos.x}
+                      y2={skillPos.y}
+                      stroke={category.color}
+                      strokeWidth="1"
+                      initial={{ opacity: 0.2 }}
+                      animate={{ opacity: isUnlocked ? 1 : 0.2 }}
+                      transition={{ duration: 0.5, ease: "easeOut" }}
+                    />
+                  );
+                })}
+              </g>
+            );
+          })}
+
           {/* Category and Skill Nodes */}
           {skillCategories.map((category, categoryIndex) => {
             const categoryYear = Math.min(
@@ -88,20 +146,7 @@ const SkillTree: React.FC<SkillTreeProps> = ({
             );
 
             return (
-              <g key={category.name}>
-                {/* Line from center to category */}
-                <motion.line
-                  x1={centerX}
-                  y1={centerY}
-                  x2={categoryPos.x}
-                  y2={categoryPos.y}
-                  stroke={category.color}
-                  strokeWidth="2"
-                  initial={{ opacity: 0.2 }}
-                  animate={{ opacity: isCategoryUnlocked ? 1 : 0.2 }}
-                  transition={{ duration: 0.5, ease: "easeOut" }}
-                />
-
+              <g key={`nodes-${category.name}`}>
                 {/* Category Node */}
                 <CategoryNode
                   x={categoryPos.x}
@@ -117,7 +162,7 @@ const SkillTree: React.FC<SkillTreeProps> = ({
                 {category.skills.map((skill, skillIndex) => {
                   const isUnlocked = skill.year <= currentYear;
                   const skillAngleOffset =
-                    (skillIndex - (category.skills.length - 1) / 2) * 0.3;
+                    (skillIndex - (category.skills.length - 1) / 2) * 0.2;
                   const skillPos = getPosition(
                     categoryIndex + 1 + skillAngleOffset,
                     skillCategories.length,
@@ -125,32 +170,17 @@ const SkillTree: React.FC<SkillTreeProps> = ({
                   );
 
                   return (
-                    <g key={skill.name}>
-                      {/* Line from category to skill */}
-                      <motion.line
-                        x1={categoryPos.x}
-                        y1={categoryPos.y}
-                        x2={skillPos.x}
-                        y2={skillPos.y}
-                        stroke={category.color}
-                        strokeWidth="1"
-                        initial={{ opacity: 0.2 }}
-                        animate={{ opacity: isUnlocked ? 1 : 0.2 }}
-                        transition={{ duration: 0.5, ease: "easeOut" }}
-                      />
-
-                      {/* Skill Node */}
-                      <SkillNode
-                        x={skillPos.x}
-                        y={skillPos.y}
-                        size={skillHexSize}
-                        color={category.color}
-                        name={skill.name}
-                        isUnlocked={isUnlocked}
-                        delay={skillIndex * 0.1}
-                        level={skill.level}
-                      />
-                    </g>
+                    <SkillNode
+                      key={`skill-${category.name}-${skill.name}`}
+                      x={skillPos.x}
+                      y={skillPos.y}
+                      size={skillHexSize}
+                      color={category.color}
+                      name={skill.name}
+                      isUnlocked={isUnlocked}
+                      delay={skillIndex * 0.1}
+                      level={skill.level}
+                    />
                   );
                 })}
               </g>
