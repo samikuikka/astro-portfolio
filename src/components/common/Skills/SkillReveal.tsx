@@ -10,7 +10,7 @@ export const allSkillCategories = [
       { name: "React", level: 5, year: 2019 },
       { name: "Next.js", level: 4, year: 2019 },
       { name: "Astro", level: 4, year: 2019 },
-      { name: "Astro", level: 4, year: 2020 },
+      { name: "Angular", level: 4, year: 2021 },
     ],
   },
   {
@@ -18,18 +18,18 @@ export const allSkillCategories = [
     color: "#4ecdc4",
     skills: [
       { name: "Node.js", level: 5, year: 2019 },
-      { name: "Python", level: 4, year: 2021 },
-      { name: "Java", level: 4, year: 2021 },
-      { name: ".NET", level: 4, year: 2021 },
+      { name: "Python", level: 4, year: 2023 },
+      { name: "Java", level: 4, year: 2023 },
+      { name: ".NET", level: 4, year: 2023 },
     ],
   },
   {
     name: "DevOps",
     color: "#feca57",
     skills: [
-      { name: "Docker", level: 3, year: 2020 },
-      { name: "Kubernetes", level: 3, year: 2020 },
-      { name: "CI/CD", level: 3, year: 2020 },
+      { name: "Docker", level: 3, year: 2021 },
+      { name: "Kubernetes", level: 3, year: 2021 },
+      { name: "CI/CD", level: 3, year: 2023 },
     ],
   },
 ];
