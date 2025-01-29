@@ -6,4 +6,6 @@ export interface SkillCategory {
 export interface Skill {
   name: string;
   level: number;
+  year: number;
+  logo?: string;
 }

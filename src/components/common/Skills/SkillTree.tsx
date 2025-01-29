@@ -4,18 +4,7 @@ import Hexagon from "./Hexagon";
 import profilePic from "../../../assets/images/profile-pic.png";
 import CategoryNode from "./CategoryNode";
 import SkillNode from "./SkillNode";
-
-interface Skill {
-  name: string;
-  level: number;
-  year: number;
-}
-
-interface SkillCategory {
-  name: string;
-  color: string;
-  skills: Skill[];
-}
+import type { SkillCategory } from "~/types/skills";
 
 interface SkillTreeProps {
   skillCategories: SkillCategory[];
@@ -180,6 +169,7 @@ const SkillTree: React.FC<SkillTreeProps> = ({
                       isUnlocked={isUnlocked}
                       delay={skillIndex * 0.1}
                       level={skill.level}
+                      logo={skill.logo}
                     />
                   );
                 })}

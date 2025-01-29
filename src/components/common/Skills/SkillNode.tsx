@@ -11,6 +11,7 @@ interface SkillNodeProps {
   isUnlocked: boolean;
   delay: number;
   level: number;
+  logo?: string;
 }
 
 const SkillNode: React.FC<SkillNodeProps> = ({
@@ -22,6 +23,7 @@ const SkillNode: React.FC<SkillNodeProps> = ({
   isUnlocked,
   delay,
   level,
+  logo,
 }) => {
   return (
     <motion.g
@@ -48,9 +50,37 @@ const SkillNode: React.FC<SkillNodeProps> = ({
         stroke={color}
         strokeWidth={1.5}
       />
-      <text x={x} y={y + 4} textAnchor="middle" fill="white" fontSize="12">
-        {name}
-      </text>
+      {logo ? (
+        <image
+          href={logo}
+          x={x - size / 2}
+          y={y - size / 2}
+          width={size}
+          height={size}
+          clipPath={`url(#hexClip-${name})`}
+        />
+      ) : (
+        <text x={x} y={y + 4} textAnchor="middle" fill="white" fontSize="12">
+          {name}
+        </text>
+      )}
+      {/* Define the clip path only if logo is present */}
+      {logo && (
+        <defs>
+          <clipPath id={`hexClip-${name}`}>
+            <polygon
+              points={`
+                ${x},${y - size}
+                ${x + (size * Math.sqrt(3)) / 2},${y - size / 2}
+                ${x + (size * Math.sqrt(3)) / 2},${y + size / 2}
+                ${x},${y + size}
+                ${x - (size * Math.sqrt(3)) / 2},${y + size / 2}
+                ${x - (size * Math.sqrt(3)) / 2},${y - size / 2}
+              `}
+            />
+          </clipPath>
+        </defs>
+      )}
     </motion.g>
   );
 };

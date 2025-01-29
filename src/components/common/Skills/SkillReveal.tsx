@@ -1,38 +1,6 @@
-import { useState } from "react";
 import { StickyScroll } from "../../ui/sticky-scroll-reveal";
 import SkillTree from "./SkillTree";
-
-export const allSkillCategories = [
-  {
-    name: "Frontend",
-    color: "#ff6b6b",
-    skills: [
-      { name: "React", level: 5, year: 2019 },
-      { name: "Next.js", level: 4, year: 2019 },
-      { name: "Astro", level: 4, year: 2019 },
-      { name: "Angular", level: 4, year: 2021 },
-    ],
-  },
-  {
-    name: "Backend",
-    color: "#4ecdc4",
-    skills: [
-      { name: "Node.js", level: 5, year: 2019 },
-      { name: "Python", level: 4, year: 2023 },
-      { name: "Java", level: 4, year: 2023 },
-      { name: ".NET", level: 4, year: 2023 },
-    ],
-  },
-  {
-    name: "DevOps",
-    color: "#feca57",
-    skills: [
-      { name: "Docker", level: 3, year: 2021 },
-      { name: "Kubernetes", level: 3, year: 2021 },
-      { name: "CI/CD", level: 3, year: 2023 },
-    ],
-  },
-];
+import { allSkillCategories } from "./skillCategories";
 
 const years = [
   {
@@ -62,8 +30,6 @@ const years = [
 ];
 
 const SkillReveal = () => {
-  const [activeYearIndex, setActiveYearIndex] = useState(0);
-
   const content = years.map((yearContent, index) => ({
     title: yearContent.title,
     description: yearContent.description,
@@ -77,7 +43,7 @@ const SkillReveal = () => {
 
   return (
     <div className="pt-20">
-      <StickyScroll content={content} onActiveChange={setActiveYearIndex} />
+      <StickyScroll content={content} />
     </div>
   );
 };
