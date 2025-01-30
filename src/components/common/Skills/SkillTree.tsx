@@ -11,6 +11,7 @@ import {
   DialogDescription,
 } from "~/components/ui/dialog";
 import type { Skill, SkillCategory } from "~/types/skills";
+import githubLogo from "../../../assets/logos/github.svg";
 
 interface SkillTreeProps {
   skillCategories: SkillCategory[];
@@ -235,8 +236,10 @@ const SkillTree: React.FC<SkillTreeProps> = ({
 
       {/* Radix Dialog Component */}
       <Dialog
-        open={!!selectedSkill}
-        onOpenChange={(open) => !open && closeDialog()}
+        open={isDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) closeDialog();
+        }}
       >
         <DialogContent>
           {selectedSkill && (
@@ -259,21 +262,28 @@ const SkillTree: React.FC<SkillTreeProps> = ({
                   <h3 className="text-md font-semibold mb-2">Projects:</h3>
                   <ul className="list-disc list-inside space-y-1">
                     {selectedSkill.projects.map((project, index) => (
-                      <li key={index}>
+                      <div className="">
                         <a
                           href={project.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-500 hover:underline"
+                          className="text-blue-500 hover:underline flex items-center"
+                          aria-label={`${project.name} GitHub Repository`}
                         >
+                          <img
+                            src={githubLogo.src}
+                            alt="github"
+                            className="mr-1 w-4 h-4"
+                            aria-hidden="true"
+                          />
                           {project.name}
                         </a>
                         {project.description && (
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-gray-600 ml-6">
                             {project.description}
                           </p>
                         )}
-                      </li>
+                      </div>
                     ))}
                   </ul>
                 </div>
