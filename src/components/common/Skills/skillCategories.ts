@@ -18,9 +18,54 @@ export const allSkillCategories: SkillCategory[] = [
     name: "Frontend",
     color: "#ff6b6b",
     skills: [
-      { name: "React", level: 5, year: 2019, logo: reactLogo.src },
-      { name: "Next.js", level: 4, year: 2019, logo: nextjsLogo.src },
-      { name: "Astro", level: 4, year: 2019, logo: astroLogo.src },
+      {
+        name: "React",
+        level: 5,
+        year: 2019,
+        logo: reactLogo.src,
+        description:
+          "Used React to build dynamic and responsive user interfaces for various web applications.",
+        projects: [
+          {
+            name: "Portfolio Website",
+            description:
+              "A web based automation tool for rapid game content creation using AI models.",
+            url: "https://github.com/bytecraftoy/aalto-2022",
+          },
+          {
+            name: "Workout logger",
+            description: "Full stack web-socket based chat application.",
+            url: "https://github.com/samikuikka/Chat-application",
+          },
+        ],
+      },
+      {
+        name: "Next.js",
+        level: 4,
+        year: 2019,
+        logo: nextjsLogo.src,
+        description: "Next.js is a React framework for production.",
+      },
+      {
+        name: "Astro",
+        level: 4,
+        year: 2019,
+        logo: astroLogo.src,
+        description:
+          "I'm huge fan of Astro's island architecture. 🏝️ In own sites I prefer to use Astro when there is a lot of static content.",
+        projects: [
+          {
+            name: "Portfolio Website",
+            description: "This website is built with Astro. ",
+            url: "https://github.com/samikuikka/astro-portfolio",
+          },
+          {
+            name: "Old Portfolio Website",
+            description: "My old portfolio website was also built with Astro.",
+            url: "https://github.com/samikuikka/Portfolio",
+          },
+        ],
+      },
       { name: "Angular", level: 4, year: 2021, logo: angularLogo.src },
     ],
   },

@@ -1,10 +1,16 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import Hexagon from "./Hexagon";
 import profilePic from "../../../assets/images/profile-pic.png";
 import CategoryNode from "./CategoryNode";
 import SkillNode from "./SkillNode";
-import type { SkillCategory } from "~/types/skills";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "~/components/ui/dialog";
+import type { Skill, SkillCategory } from "~/types/skills";
 
 interface SkillTreeProps {
   skillCategories: SkillCategory[];
@@ -15,6 +21,22 @@ const SkillTree: React.FC<SkillTreeProps> = ({
   skillCategories,
   currentYear,
 }) => {
+  // Dialog state
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
+
+  // Function to open dialog
+  const openDialog = (skill: Skill) => {
+    setSelectedSkill(skill);
+    setIsDialogOpen(true);
+  };
+
+  // Function to close dialog
+  const closeDialog = () => {
+    setIsDialogOpen(false);
+    setSelectedSkill(null);
+  };
+
   // Calculate SVG size
   const svgSize = useMemo(() => Math.min(window.innerWidth * 0.8, 800), []);
   const centerX = svgSize / 2;
@@ -170,6 +192,7 @@ const SkillTree: React.FC<SkillTreeProps> = ({
                       delay={skillIndex * 0.1}
                       level={skill.level}
                       logo={skill.logo}
+                      onClick={() => openDialog(skill)} // Pass onClick handler
                     />
                   );
                 })}
@@ -209,6 +232,56 @@ const SkillTree: React.FC<SkillTreeProps> = ({
           </motion.g>
         </g>
       </svg>
+
+      {/* Radix Dialog Component */}
+      <Dialog
+        open={!!selectedSkill}
+        onOpenChange={(open) => !open && closeDialog()}
+      >
+        <DialogContent>
+          {selectedSkill && (
+            <>
+              <DialogTitle className="flex items-center space-x-2">
+                {selectedSkill.logo && (
+                  <img
+                    src={selectedSkill.logo}
+                    alt={`${selectedSkill.name} Logo`}
+                    className="w-6 h-6 object-contain"
+                  />
+                )}
+                <span>{selectedSkill.name}</span>
+              </DialogTitle>
+              <DialogDescription className="mt-2">
+                {selectedSkill.description}
+              </DialogDescription>
+              {selectedSkill.projects && selectedSkill.projects.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-md font-semibold mb-2">Projects:</h3>
+                  <ul className="list-disc list-inside space-y-1">
+                    {selectedSkill.projects.map((project, index) => (
+                      <li key={index}>
+                        <a
+                          href={project.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-500 hover:underline"
+                        >
+                          {project.name}
+                        </a>
+                        {project.description && (
+                          <p className="text-sm text-gray-600">
+                            {project.description}
+                          </p>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

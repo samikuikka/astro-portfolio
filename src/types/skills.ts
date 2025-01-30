@@ -8,4 +8,12 @@ export interface Skill {
   level: number;
   year: number;
   logo?: string;
+  description?: string;
+  projects?: Project[];
+}
+
+export interface Project {
+  name: string;
+  description: string;
+  url: string;
 }

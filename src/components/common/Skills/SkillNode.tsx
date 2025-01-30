@@ -1,3 +1,5 @@
+// src/components/SkillNode.tsx
+
 import React from "react";
 import { motion } from "framer-motion";
 import Hexagon from "./Hexagon";
@@ -12,6 +14,7 @@ interface SkillNodeProps {
   delay: number;
   level: number;
   logo?: string;
+  onClick?: () => void; // Add onClick prop
 }
 
 const SkillNode: React.FC<SkillNodeProps> = ({
@@ -24,6 +27,7 @@ const SkillNode: React.FC<SkillNodeProps> = ({
   delay,
   level,
   logo,
+  onClick, // Destructure onClick
 }) => {
   return (
     <motion.g
@@ -37,10 +41,16 @@ const SkillNode: React.FC<SkillNodeProps> = ({
         ease: "easeOut",
         delay,
       }}
-      className="group"
+      className="group cursor-pointer" // Add cursor-pointer for UX
       aria-label={`Skill: ${name}, Level: ${level}`}
       role="button"
       tabIndex={0}
+      onClick={isUnlocked ? onClick : undefined} // Only clickable if unlocked
+      onKeyPress={(e) => {
+        if (isUnlocked && (e.key === "Enter" || e.key === " ")) {
+          onClick && onClick();
+        }
+      }}
     >
       <Hexagon
         x={x}
