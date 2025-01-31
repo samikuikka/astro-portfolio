@@ -34,7 +34,7 @@ export const allSkillCategories: SkillCategory[] = [
           },
           {
             name: "Workout logger",
-            description: "Full stack web-socket based chat application.",
+            description: "Full stack application for logging workouts.",
             url: "https://github.com/samikuikka/Chat-application",
           },
         ],

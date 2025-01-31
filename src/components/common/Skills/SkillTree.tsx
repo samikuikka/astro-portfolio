@@ -4,14 +4,8 @@ import Hexagon from "./Hexagon";
 import profilePic from "../../../assets/images/profile-pic.png";
 import CategoryNode from "./CategoryNode";
 import SkillNode from "./SkillNode";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from "~/components/ui/dialog";
+import SkillDialog from "./SkillDialog";
 import type { Skill, SkillCategory } from "~/types/skills";
-import githubLogo from "../../../assets/logos/github.svg";
 
 interface SkillTreeProps {
   skillCategories: SkillCategory[];
@@ -234,64 +228,11 @@ const SkillTree: React.FC<SkillTreeProps> = ({
         </g>
       </svg>
 
-      {/* Radix Dialog Component */}
-      <Dialog
-        open={isDialogOpen}
-        onOpenChange={(open) => {
-          if (!open) closeDialog();
-        }}
-      >
-        <DialogContent>
-          {selectedSkill && (
-            <>
-              <DialogTitle className="flex items-center space-x-2">
-                {selectedSkill.logo && (
-                  <img
-                    src={selectedSkill.logo}
-                    alt={`${selectedSkill.name} Logo`}
-                    className="w-6 h-6 object-contain"
-                  />
-                )}
-                <span>{selectedSkill.name}</span>
-              </DialogTitle>
-              <DialogDescription className="mt-2">
-                {selectedSkill.description}
-              </DialogDescription>
-              {selectedSkill.projects && selectedSkill.projects.length > 0 && (
-                <div className="mt-4">
-                  <h3 className="text-md font-semibold mb-2">Projects:</h3>
-                  <ul className="list-disc list-inside space-y-1">
-                    {selectedSkill.projects.map((project, index) => (
-                      <div className="">
-                        <a
-                          href={project.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-500 hover:underline flex items-center"
-                          aria-label={`${project.name} GitHub Repository`}
-                        >
-                          <img
-                            src={githubLogo.src}
-                            alt="github"
-                            className="mr-1 w-4 h-4"
-                            aria-hidden="true"
-                          />
-                          {project.name}
-                        </a>
-                        {project.description && (
-                          <p className="text-sm text-gray-600 ml-6">
-                            {project.description}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <SkillDialog
+        isOpen={isDialogOpen}
+        onClose={closeDialog}
+        skill={selectedSkill}
+      />
     </div>
   );
 };
