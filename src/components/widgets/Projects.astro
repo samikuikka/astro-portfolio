@@ -2,11 +2,19 @@
 import ProjectCarousel from "~/components/common/ProjectCarousel";
 ---
 
-<section class="my-20">
+<section class="my-80">
   <div
-    class="w-full intersect-once intersect-quarter motion-safe:opacity-0 motion-safe:intersect:animate-fade"
+    class="w-full intersect-once intersect-half motion-safe:opacity-0 motion-safe:intersect:animate-fade"
   >
-    <h2 class="text-2xl font-semibold mb-4 text-center">Featured Projects</h2>
-    <ProjectCarousel client:visible />
+    <h2
+      class="text-2xl font-semibold mb-4 intersect-once text-center intersect-half motion-safe:opacity-0 motion-safe:intersect:animate-fade"
+    >
+      Featured Projects
+    </h2>
+    <div
+      class="intersect-half motion-safe:opacity-0 intersect-once motion-safe:intersect:animate-fade"
+    >
+      <ProjectCarousel client:visible />
+    </div>
   </div>
 </section>

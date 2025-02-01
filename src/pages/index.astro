@@ -3,15 +3,13 @@ import Layout from "../layouts/Layout.astro";
 import Hero from "~/components/widgets/Hero.astro";
 import Introduction from "~/components/widgets/Introduction.astro";
 import Projects from "~/components/widgets/Projects.astro";
-import Skills from "~/components/widgets/Skills.astro";
 import SkillReveal from "~/components/common/Skills/SkillReveal";
 ---
 
 <Layout>
   <Hero />
-  <!-- <Introduction />
-  <Projects /> -->
-  <!-- <Skills /> -->
+  <Introduction />
+  <Projects />
   <SkillReveal client:only="react" />
   <section class="h-screen bg-blue-50"></section>
 </Layout>
