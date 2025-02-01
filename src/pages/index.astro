@@ -4,6 +4,7 @@ import Hero from "~/components/widgets/Hero.astro";
 import Introduction from "~/components/widgets/Introduction.astro";
 import Projects from "~/components/widgets/Projects.astro";
 import SkillReveal from "~/components/common/Skills/SkillReveal";
+import Contact from "~/components/widgets/Contact.astro";
 ---
 
 <Layout>
@@ -11,5 +12,5 @@ import SkillReveal from "~/components/common/Skills/SkillReveal";
   <Introduction />
   <Projects />
   <SkillReveal client:only="react" />
-  <section class="h-screen bg-blue-50"></section>
+  <Contact />
 </Layout>

@@ -1,0 +1,76 @@
+---
+
+---
+
+<section
+  id="contact"
+  class="relative py-12 px-4 md:px-6 lg:px-20 overflow-hidden bg-page"
+>
+  <div class="absolute inset-0 z-0">
+    <div
+      class="w-full h-full bg-gradient-to-tl from-red-500 via-wave-default to-wave-fast opacity-20"
+    >
+    </div>
+  </div>
+
+  <div class="max-w-3xl mx-auto relative z-10">
+    <h2 class="text-3xl font-heading font-bold text-heading text-center mb-8">
+      Get in Touch
+    </h2>
+
+    <form
+      action="https://formspree.io/f/mqaebbba"
+      method="POST"
+      class="rounded-lg px-8 py-6 z-10 border-[rgba(255,255,255,0.10)] bg-[rgba(40,40,40,0.70)] shadow-[2px_4px_16px_0px_rgba(248,248,248,0.06)_inset]"
+    >
+      <div class="mb-4">
+        <label for="name" class="block text-sm font-medium text-muted mb-2">
+          Name
+        </label>
+        <input
+          id="name"
+          type="text"
+          name="name"
+          placeholder="Your Name"
+          required
+          class="w-full border text-black border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      </div>
+
+      <div class="mb-4">
+        <label for="email" class="block text-sm font-medium text-muted mb-2">
+          Email
+        </label>
+        <input
+          id="email"
+          type="email"
+          name="_replyto"
+          placeholder="you@example.com"
+          required
+          class="w-full border text-black border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      </div>
+
+      <div class="mb-6">
+        <label for="message" class="block text-sm font-medium text-muted mb-2">
+          Message
+        </label>
+        <textarea
+          id="message"
+          name="message"
+          rows="5"
+          placeholder="Your Message..."
+          required
+          class="w-full border text-black border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary"
+        ></textarea>
+      </div>
+
+      <button
+        type="submit"
+        class="w-full bg-secondary border border-gray-300 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+      >
+        Send Message
+      </button>
+    </form>
+  </div>
+</section>
