@@ -21,7 +21,9 @@ import { ClientRouter } from "astro:transitions";
     <ClientRouter fallback="swap" />
   </head>
 
-  <body class="antialiased text-default bg-page tracking-tight">
+  <body
+    class="antialiased text-default bg-page overflow-x-hidden tracking-tight"
+  >
     <slot />
 
     <BasicScripts />
