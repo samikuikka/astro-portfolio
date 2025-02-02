@@ -2,6 +2,9 @@
 import typographyPlugin from "@tailwindcss/typography";
 import defaultTheme from "tailwindcss/defaultTheme";
 import plugin from "tailwindcss/plugin";
+const {
+  default: flattenColorPalette,
+} = require("tailwindcss/lib/util/flattenColorPalette");
 
 export default {
   darkMode: ["class"],
@@ -123,6 +126,7 @@ export default {
     },
   },
   plugins: [
+    addVariablesForColors,
     typographyPlugin,
     plugin(({ addVariant }) => {
       addVariant("intersect", "&:not([no-intersect])");
@@ -130,3 +134,14 @@ export default {
     require("tailwindcss-animate"),
   ],
 };
+
+function addVariablesForColors({ addBase, theme }) {
+  let allColors = flattenColorPalette(theme("colors"));
+  let newVars = Object.fromEntries(
+    Object.entries(allColors).map(([key, val]) => [`--${key}`, val])
+  );
+
+  addBase({
+    ":root": newVars,
+  });
+}

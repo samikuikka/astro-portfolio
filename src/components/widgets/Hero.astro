@@ -1,11 +1,14 @@
 ---
 import { Image } from "astro:assets";
 import heroImage from "~/assets/images/hero-3.gif";
+import { Spotlight } from "../ui/spotlight-new";
 ---
 
 <section
   class="relative flex flex-col-reverse lg:flex-row items-center justify-between h-screen px-4 md:px-6 lg:px-20 bg-page"
 >
+  <Spotlight client:only="react" />
+
   <!-- Left Section: Text Content -->
   <div class="w-full lg:w-1/2 relative z-10 space-y-6">
     <p class="text-xl text-primary font-medium">Hello</p>
