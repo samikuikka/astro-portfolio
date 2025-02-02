@@ -1,15 +1,15 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import Hero from "~/components/widgets/Hero.astro";
-import Introduction from "~/components/widgets/Introduction.astro";
 import Projects from "~/components/widgets/Projects.astro";
 import SkillReveal from "~/components/common/Skills/SkillReveal";
 import Contact from "~/components/widgets/Contact.astro";
+import { PinnedIntroduction } from "~/components/common/PinnedIntroduction";
 ---
 
 <Layout>
   <Hero />
-  <Introduction />
+  <PinnedIntroduction client:only="react" />
   <SkillReveal client:only="react" />
   <Projects />
   <Contact />
