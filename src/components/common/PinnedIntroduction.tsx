@@ -10,7 +10,7 @@ export function PinnedIntroduction() {
   const textRef = useRef(null);
 
   useEffect(() => {
-    // Set up pinning
+    // Create a scroll trigger for pinning the section.
     ScrollTrigger.create({
       trigger: containerRef.current,
       start: "center center",
@@ -19,32 +19,32 @@ export function PinnedIntroduction() {
       scrub: true,
     });
 
-    // Create a timeline for the text animation
-    const timeline = gsap.timeline({
-      scrollTrigger: {
-        trigger: containerRef.current,
-        start: "center center",
-        end: "+=2000",
-        scrub: true,
-      },
-    });
-
-    // Animate each word individually.
-    // Make sure each word in your text is wrapped in a span that you can select.
-    // For example, if you have added a class "word" to each word:
-    timeline.fromTo(
-      // @ts-ignore
-      textRef.current.querySelectorAll(".word"),
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, stagger: 0.1 }
-    );
+    // Create a timeline to animate the color of the words.
+    gsap
+      .timeline({
+        scrollTrigger: {
+          trigger: containerRef.current,
+          start: "center center",
+          end: "+=2000",
+          scrub: true,
+        },
+      })
+      .to(
+        //  @ts-ignore
+        textRef.current.querySelectorAll(".word"),
+        {
+          color: "#fff", // animate to white
+          stagger: 0.05, // adjust if you want a staggered effect
+        },
+        0
+      );
   }, []);
 
-  // Split your text into words wrapped in spans with a className "word"
+  // Split your text into words wrapped in spans with a class "word"
   const aboutText =
     "Hello, I'm Sami Kuikka—a passionate full-stack software engineer from Finland. I specialize in building scalable, robust systems that solve real-world challenges.";
   const words = aboutText.split(" ").map((word, index) => (
-    <span key={index} className="word inline-block">
+    <span key={index} className="word text-[#aaa7] inline-block">
       {word}&nbsp;
     </span>
   ));
