@@ -77,8 +77,17 @@ export default {
         waveSlower: "wave 10s forwards",
         neonHex: "neonHex 2s linear infinite",
         waveVeryFast: "wave 3s forwards",
+        shimmer: "shimmer 2s linear infinite",
       },
       keyframes: {
+        shimmer: {
+          from: {
+            backgroundPosition: "0 0",
+          },
+          to: {
+            backgroundPosition: "-200% 0",
+          },
+        },
         dashAnimation: {
           "0%": {
             strokeDashoffset: 0,
