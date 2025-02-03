@@ -17,6 +17,7 @@
     "@tailwindcss/typography": "^0.5.16",
     "@types/react": "^19.0.7",
     "@types/react-dom": "^19.0.3",
+    "@vercel/analytics": "^1.4.1",
     "astro": "^5.1.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
