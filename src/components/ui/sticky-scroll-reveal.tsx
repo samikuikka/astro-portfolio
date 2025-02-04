@@ -187,37 +187,70 @@ function ScrollSection({
   setActiveCard: (i: number) => void;
   divRef: RefCallback<HTMLDivElement>;
 }) {
-  const isInViewRef = useRef<HTMLDivElement>(null);
-  const isInView = useInView(isInViewRef, {
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Two refs for desktop and mobile logic
+  const observerRef = useRef<HTMLDivElement>(null);
+  const mobileRef = useRef<HTMLDivElement>(null);
+
+  // useInView for desktop
+  const isInView = useInView(observerRef, {
     margin: "-50% 0px -50% 0px",
   });
 
+  // Update mobile state on mount and on window resize
   useEffect(() => {
-    if (isInView) {
-      setActiveCard(index);
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Desktop: Use Intersection Observer; Mobile: Use scroll listener.
+  useEffect(() => {
+    if (!isMobile) {
+      if (isInView) {
+        setActiveCard(index);
+      }
+    } else if (mobileRef.current) {
+      const handleScroll = () => {
+        const rect = mobileRef.current!.getBoundingClientRect();
+        const viewportMiddle = window.innerHeight / 2;
+        if (rect.top < viewportMiddle && rect.bottom > viewportMiddle) {
+          setActiveCard(index);
+        }
+      };
+
+      window.addEventListener("scroll", handleScroll);
+      handleScroll();
+
+      return () => window.removeEventListener("scroll", handleScroll);
     }
-  }, [isInView, index, setActiveCard]);
+  }, [isMobile, isInView, index, setActiveCard]);
 
   return (
     <div
       ref={(el) => {
         divRef(el);
-        isInViewRef.current = el;
+        observerRef.current = el;
+        mobileRef.current = el;
       }}
       className="py-24 flex flex-col justify-center"
     >
       <motion.h2
         initial={{ opacity: 0 }}
-        animate={{ opacity: isInView ? 1 : 0.3 }}
+        animate={{ opacity: !isMobile ? (isInView ? 1 : 0.3) : 1 }}
         transition={{ duration: 0.2 }}
         className="text-2xl font-bold text-slate-100"
       >
         {item.title}
       </motion.h2>
-
       <motion.p
         initial={{ opacity: 0 }}
-        animate={{ opacity: isInView ? 1 : 0.3 }}
+        animate={{ opacity: !isMobile ? (isInView ? 1 : 0.3) : 1 }}
         transition={{ duration: 0.2 }}
         className="text-slate-300 max-w-sm mt-10"
       >
