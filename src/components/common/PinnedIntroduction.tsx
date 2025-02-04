@@ -10,34 +10,47 @@ export function PinnedIntroduction() {
   const textRef = useRef(null);
 
   useEffect(() => {
-    // Create a scroll trigger for pinning the section.
-    ScrollTrigger.create({
-      trigger: containerRef.current,
-      start: "center center",
-      end: "+=2000",
-      pin: true,
-      scrub: true,
-    });
-
-    // Create a timeline to animate the color of the words.
-    gsap
-      .timeline({
-        scrollTrigger: {
+    ScrollTrigger.matchMedia({
+      "(min-width: 768px)": () => {
+        ScrollTrigger.create({
           trigger: containerRef.current,
           start: "center center",
           end: "+=2000",
+          pin: true,
           scrub: true,
-        },
-      })
-      .to(
-        //  @ts-ignore
-        textRef.current.querySelectorAll(".word"),
-        {
-          color: "#fff", // animate to white
-          stagger: 0.05, // adjust if you want a staggered effect
-        },
-        0
-      );
+        });
+
+        gsap
+          .timeline({
+            scrollTrigger: {
+              trigger: containerRef.current,
+              start: "center center",
+              end: "+=2000",
+              scrub: true,
+            },
+          })
+          .to(
+            // @ts-ignore
+            textRef.current.querySelectorAll(".word"),
+            {
+              color: "#fff",
+              stagger: 0.05,
+            },
+            0
+          );
+      },
+
+      // Mobile devices: Disable pinning or apply a simpler animation
+      "(max-width: 767px)": () => {
+        // @ts-ignore
+        gsap.to(textRef.current.querySelectorAll(".word"), {
+          color: "#fff",
+          stagger: 0.05,
+          duration: 1,
+          delay: 0.5,
+        });
+      },
+    });
   }, []);
 
   // Split your text into words wrapped in spans with a class "word"
@@ -52,7 +65,7 @@ export function PinnedIntroduction() {
   return (
     <section
       ref={containerRef}
-      className="h-screen flex flex-col md:flex-row items-center justify-between bg-page px-4 md:px-6 lg:px-20"
+      className="h-screen flex flex-col md:flex-row items-center justify-around bg-page px-4 md:px-6 lg:px-20"
     >
       {/* Profile Image */}
       <div className="w-full md:w-1/2 flex justify-center mt-8 md:mt-0">

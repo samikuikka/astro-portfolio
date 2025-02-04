@@ -5,15 +5,15 @@ import { Spotlight } from "../ui/spotlight-new";
 ---
 
 <section
-  class="relative flex flex-col-reverse lg:flex-row items-center justify-between h-screen px-4 md:px-6 lg:px-20 bg-page"
+  class="relative flex flex-col-reverse lg:flex-row items-center justify-end md:justify-between h-screen px-4 md:px-6 lg:px-20 bg-page"
 >
   <Spotlight client:only="react" />
 
   <!-- Left Section: Text Content -->
-  <div class="w-full lg:w-1/2 relative z-10 space-y-6">
+  <div class="w-full lg:w-1/2 relative z-10 space-y-2 md:space-y-6">
     <p class="text-xl text-primary font-medium">Hello</p>
     <h1
-      class="text-5xl md:text-6xl font-heading font-bold leading-tight text-heading"
+      class="text-4xl md:text-6xl font-heading font-bold leading-tight text-heading"
     >
       I'm <span
         class="bg-gradient-to-r bg-clip-text text-transparent from-white via-purple-500 to-pink-400"
@@ -54,7 +54,9 @@ import { Spotlight } from "../ui/spotlight-new";
     </div>
   </div>
 
-  <div class="w-full lg:w-1/2 mb-8 lg:mb-0 flex justify-center z-10 relative">
+  <div
+    class="w-full lg:w-1/2 md:mb-8 lg:mb-0 flex justify-center z-10 relative"
+  >
     <Image
       src={heroImage}
       alt="Sami Kuikka"
