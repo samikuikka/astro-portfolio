@@ -57,12 +57,17 @@ import { Spotlight } from "../ui/spotlight-new";
   <div
     class="w-full lg:w-1/2 md:mb-8 lg:mb-0 flex justify-center z-10 relative"
   >
-    <Image
-      src={heroImage}
-      alt="Sami Kuikka"
+    <video
       class="max-w-full h-auto object-contain"
-      width={600}
-      height={600}
-    />
+      width="600"
+      height="600"
+      autoplay
+      loop
+      muted
+      playsinline
+    >
+      <source src="/hero-2.webm" type="video/webm" />
+      Your browser does not support the video tag.
+    </video>
   </div>
 </section>
