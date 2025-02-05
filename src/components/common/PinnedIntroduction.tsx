@@ -57,7 +57,10 @@ export function PinnedIntroduction() {
   const aboutText =
     "Hello, I'm Sami Kuikka—a passionate full-stack software engineer from Finland. I specialize in building scalable, robust systems that solve real-world challenges.";
   const words = aboutText.split(" ").map((word, index) => (
-    <span key={index} className="word text-[#aaa7] inline-block">
+    <span
+      key={index}
+      className="word text-xl md:text-3xl text-[#aaa9] inline-block"
+    >
       {word}&nbsp;
     </span>
   ));

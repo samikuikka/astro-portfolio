@@ -49,6 +49,7 @@ const ProjectCarousel = () => {
         {scrollSnaps.map((_, index) => (
           <Button
             key={index}
+            aria-label="Scroll"
             className={`w-3 h-3 rounded-full mx-1 ${index === selectedIndex ? "bg-white" : "bg-gray-500"}`}
             onClick={() => scrollTo(index)}
           />
@@ -56,6 +57,7 @@ const ProjectCarousel = () => {
       </div>
       <Button
         className="absolute left-0 top-1/2 transform -translate-y-1/2"
+        aria-label="Previous"
         onClick={scrollPrev}
         variant="ghost"
       >
@@ -63,6 +65,7 @@ const ProjectCarousel = () => {
       </Button>
       <Button
         className="absolute right-0 top-1/2 transform -translate-y-1/2"
+        aria-label="Next"
         onClick={scrollNext}
         variant="ghost"
       >

@@ -26,6 +26,7 @@ import { Spotlight } from "../ui/spotlight-new";
     <div class="flex flex-wrap gap-4 mt-6">
       <a
         href="#contact"
+        title="Contact button"
         class="inline-flex h-12 animate-shimmer items-center justify-center rounded-md border border-slate-800 bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-[length:200%_100%] px-6 font-medium text-slate-400 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50"
       >
         Contact me
@@ -33,6 +34,7 @@ import { Spotlight } from "../ui/spotlight-new";
       <a
         href="https://github.com/samikuikka"
         target="_blank"
+        title="Github button"
         class="h-12 px-4 py-2 bg-black text-white shadow border border-slate-800 hover:bg-gray-800 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-300 disabled:pointer-events-none disabled:opacity-50"
       >
         <!-- GitHub Logo (SVG) -->
@@ -65,8 +67,10 @@ import { Spotlight } from "../ui/spotlight-new";
       loop
       muted
       playsinline
+      aria-label="A looping animation of typing"
     >
       <source src="/hero-2.webm" type="video/webm" />
+
       Your browser does not support the video tag.
     </video>
   </div>

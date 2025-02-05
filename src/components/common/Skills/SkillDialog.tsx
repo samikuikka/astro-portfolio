@@ -52,6 +52,7 @@ const SkillDialog: React.FC<SkillDialogProps> = ({
                         href={project.url}
                         target="_blank"
                         rel="noopener noreferrer"
+                        title="GitHub Repository"
                         className="text-blue-500 hover:underline flex items-center"
                         aria-label={`${project.name} GitHub Repository`}
                       >
