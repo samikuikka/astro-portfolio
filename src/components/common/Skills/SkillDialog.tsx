@@ -39,7 +39,7 @@ const SkillDialog: React.FC<SkillDialogProps> = ({
               )}
               <span>{skill.name}</span>
             </DialogTitle>
-            <DialogDescription className="mt-2">
+            <DialogDescription className="mt-2 text-xl">
               {skill.description}
             </DialogDescription>
             {skill.projects && skill.projects.length > 0 && (

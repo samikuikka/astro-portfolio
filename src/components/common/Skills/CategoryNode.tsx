@@ -47,7 +47,7 @@ const CategoryNode: React.FC<CategoryNodeProps> = ({
         stroke={color}
         strokeWidth={2}
       />
-      <text x={x} y={y + 5} textAnchor="middle" fill="white" fontSize="14">
+      <text x={x} y={y + 5} textAnchor="middle" fill="white" fontSize="18">
         {name}
       </text>
     </motion.g>

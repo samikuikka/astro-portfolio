@@ -1,7 +1,9 @@
 ---
-import { Image } from "astro:assets";
-import heroImage from "~/assets/images/hero-3.gif";
 import { Spotlight } from "../ui/spotlight-new";
+import { getLangFromUrl, useTranslations } from "~/i18n/utils";
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
 ---
 
 <section
@@ -11,17 +13,17 @@ import { Spotlight } from "../ui/spotlight-new";
 
   <!-- Left Section: Text Content -->
   <div class="w-full lg:w-1/2 relative z-10 space-y-2 md:space-y-6">
-    <p class="text-xl text-primary font-medium">Hello</p>
+    <p class="text-xl text-primary font-medium">{t("hero.hello")}</p>
     <h1
       class="text-4xl md:text-6xl font-heading font-bold leading-tight text-heading"
     >
-      I'm <span
+      {t("hero.name")}<span
         class="bg-gradient-to-r bg-clip-text text-transparent from-white via-purple-500 to-pink-400"
         >Sami Kuikka</span
       >
     </h1>
     <p class="text-lg text-muted max-w-md">
-      a Finnish full stack engineer who loves building scalable systems.
+      {t("hero.subtitle")}
     </p>
     <div class="flex flex-wrap gap-4 mt-6">
       <a
@@ -29,7 +31,7 @@ import { Spotlight } from "../ui/spotlight-new";
         title="Contact button"
         class="inline-flex h-12 animate-shimmer items-center justify-center rounded-md border border-slate-800 bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-[length:200%_100%] px-6 font-medium text-slate-400 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50"
       >
-        Contact me
+        {t("hero.contact")}
       </a>
       <a
         href="https://github.com/samikuikka"

@@ -2,12 +2,19 @@ import { useRef, useEffect } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import profilePic from "../../assets/images/profile-pic.png";
+import { useTranslations } from "~/i18n/utils";
+import type { ui } from "~/i18n/ui";
 
 gsap.registerPlugin(ScrollTrigger);
 
-export function PinnedIntroduction() {
+interface PinnedIntroductionProps {
+  lang: keyof typeof ui;
+}
+
+export function PinnedIntroduction({ lang }: PinnedIntroductionProps) {
   const containerRef = useRef(null);
   const textRef = useRef(null);
+  const t = useTranslations(lang);
 
   useEffect(() => {
     ScrollTrigger.matchMedia({
@@ -54,16 +61,25 @@ export function PinnedIntroduction() {
   }, []);
 
   // Split your text into words wrapped in spans with a class "word"
-  const aboutText =
-    "Hello, I'm Sami Kuikka—a passionate full-stack software engineer from Finland. I specialize in building scalable, robust systems that solve real-world challenges.";
-  const words = aboutText.split(" ").map((word, index) => (
-    <span
-      key={index}
-      className="word text-xl md:text-3xl text-[#aaa9] inline-block"
-    >
-      {word}&nbsp;
-    </span>
-  ));
+  const aboutText = t("about.introduction");
+  const words =
+    lang == "cn"
+      ? aboutText.split("").map((char, index) => (
+          <span
+            key={index}
+            className="word text-xl md:text-3xl text-[#aaa9] inline-block"
+          >
+            {char}
+          </span>
+        ))
+      : aboutText.split(" ").map((word, index) => (
+          <span
+            key={index}
+            className="word text-xl md:text-3xl text-[#aaa9] inline-block"
+          >
+            {word}&nbsp;
+          </span>
+        ));
 
   return (
     <section
@@ -86,7 +102,7 @@ export function PinnedIntroduction() {
         className="w-full md:w-1/2 flex flex-col items-center md:items-start space-y-6"
       >
         <h2 className="font-bold font-heading leading-tighter tracking-tighter text-heading md:text-4xl text-3xl">
-          About Me
+          {t("about.about")}
         </h2>
         <div className="leading-tighter text-xl font-sans">{words}</div>
       </div>

@@ -70,7 +70,7 @@ const SkillNode: React.FC<SkillNodeProps> = ({
           clipPath={`url(#hexClip-${name})`}
         />
       ) : (
-        <text x={x} y={y + 4} textAnchor="middle" fill="white" fontSize="12">
+        <text x={x} y={y + 4} textAnchor="middle" fill="white" fontSize="18">
           {name}
         </text>
       )}
