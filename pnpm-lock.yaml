@@ -35,6 +35,9 @@ dependencies:
   '@vercel/analytics':
     specifier: ^1.4.1
     version: 1.4.1(react@19.0.0)
+  '@vercel/edge':
+    specifier: ^1.2.1
+    version: 1.2.1
   astro:
     specifier: ^5.2.5
     version: 5.2.5(typescript@5.7.3)
@@ -1822,6 +1825,10 @@ packages:
         optional: true
     dependencies:
       react: 19.0.0
+    dev: false
+
+  /@vercel/edge@1.2.1:
+    resolution: {integrity: sha512-1++yncEyIAi68D3UEOlytYb1IUcIulMWdoSzX2h9LuSeeyR7JtaIgR8DcTQ6+DmYOQn+5MCh6LY+UmK6QBByNA==}
     dev: false
 
   /@vitejs/plugin-react@4.3.4(vite@6.0.11):
