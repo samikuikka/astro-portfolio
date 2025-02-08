@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useCallback } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { type Project, projects } from "./project";
+import { type Project, getProjects } from "./project";
 import { Button } from "~/components/ui/button";
+import type { Language } from "~/types/common";
+import { useTranslations } from "~/i18n/utils";
 
-const ProjectCarousel = () => {
+const ProjectCarousel = ({ lang }: { lang: Language }) => {
+  const t = useTranslations(lang);
+  const projects = getProjects(t);
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);

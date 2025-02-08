@@ -12,19 +12,18 @@ export interface Project {
   technologies: string[];
 }
 
-export const projects: Project[] = [
+export const getProjects = (t: (key: string) => string): Project[] => [
   {
     id: 1,
-    title: "Portfolio",
-    description: "This portfolio website! Hopoe you like it! :)",
+    title: t("projects.portfolio.title"),
+    description: t("projects.portfolio.description"),
     imageUrl: newPortfolio.src,
     technologies: ["Astro", "React", "TailwindCSS", "TypeScript"],
   },
   {
     id: 2,
-    title: "AI game content creator",
-    description:
-      "A web based automation tool for rapid game content creation using AI models. As a part of Aalto University's 2022 Web development course.",
+    title: t("projects.aiGameContentCreator.title"),
+    description: t("projects.aiGameContentCreator.description"),
     imageUrl: aiCreator.src,
     technologies: [
       "React",
@@ -37,25 +36,22 @@ export const projects: Project[] = [
   },
   {
     id: 3,
-    title: "Old portfolio",
-    description:
-      "My old portfolio website, built with Astro. It was a great learning experience!",
+    title: t("projects.oldPortfolio.title"),
+    description: t("projects.oldPortfolio.description"),
     imageUrl: oldPortfolio.src,
     technologies: ["Astro", "React", "TailwindCSS", "Vercel"],
   },
   {
     id: 4,
-    title: "E-commerce platform",
-    description:
-      "An mock of an e-commerce platform. This project was a part of a device-agnostic design course in Aalto University.",
+    title: t("projects.eCommercePlatform.title"),
+    description: t("projects.eCommercePlatform.description"),
     imageUrl: eCommerce.src,
     technologies: ["Dart", "Flutter", "Riverpod"],
   },
   {
     id: 5,
-    title: "Workout logger",
-    description:
-      "Full stack application for logging workouts. This project was a part of a full stack course in Aalto University.",
+    title: t("projects.workoutLogger.title"),
+    description: t("projects.workoutLogger.description"),
     imageUrl: workoutLogger.src,
     technologies: ["React", "Node.js", "Express", "MongoDB", "Typescript"],
   },

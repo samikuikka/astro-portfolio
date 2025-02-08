@@ -84,6 +84,32 @@ export const ui = {
     "skills.database.redis.name": "Redis",
     "skills.database.redis.description":
       "I use Redis for caching information to improve microservices performance.",
+    "skills.projects": "Projects",
+
+    // Projects
+    "projects.featured": "Featured Projects",
+    "projects.portfolio.title": "Portfolio",
+    "projects.portfolio.description":
+      "This portfolio website! Hope you like it! :)",
+    "projects.aiGameContentCreator.title": "AI game content creator",
+    "projects.aiGameContentCreator.description":
+      "A web based automation tool for rapid game content creation using AI models. As a part of Aalto University's 2022 Web development course.",
+    "projects.oldPortfolio.title": "Old portfolio",
+    "projects.oldPortfolio.description":
+      "My old portfolio website, built with Astro. It was a great learning experience!",
+    "projects.eCommercePlatform.title": "E-commerce platform",
+    "projects.eCommercePlatform.description":
+      "A mock of an e-commerce platform. This project was a part of a device-agnostic design course in Aalto University.",
+    "projects.workoutLogger.title": "Workout logger",
+    "projects.workoutLogger.description":
+      "Full stack application for logging workouts. This project was a part of a full stack course in Aalto University.",
+
+    // Contact
+    "contact.title": " Get in Touch",
+    "contact.name": "Name",
+    "contact.email": "Email",
+    "contact.message": "Message",
+    "contact.send": "Send Message",
   },
   cn: {
     "hero.hello": "你好",
@@ -162,5 +188,30 @@ export const ui = {
     "skills.database.redis.name": "Redis",
     "skills.database.redis.description":
       "我使用Redis来缓存微服务信息以提升性能。",
+    "skills.projects": "项目",
+
+    // Projects
+    "projects.featured": "推荐项目",
+    "projects.portfolio.title": "作品集",
+    "projects.portfolio.description": "这是我的作品集网站！希望你喜欢！:)",
+    "projects.aiGameContentCreator.title": "AI 游戏内容生成器",
+    "projects.aiGameContentCreator.description":
+      "一个基于网页的自动化工具，用于利用AI模型快速生成游戏内容。该项目是阿尔托大学2022年网页开发课程的一部分。",
+    "projects.oldPortfolio.title": "旧作品集",
+    "projects.oldPortfolio.description":
+      "我曾经使用Astro构建的旧作品集网站。这是一次极好的学习经历！",
+    "projects.eCommercePlatform.title": "电子商务平台",
+    "projects.eCommercePlatform.description":
+      "一个电子商务平台的模拟项目。该项目是阿尔托大学设备无关设计课程的一部分。",
+    "projects.workoutLogger.title": "健身记录器",
+    "projects.workoutLogger.description":
+      "一个用于记录健身的全栈应用。该项目是阿尔托大学全栈课程的一部分。",
+
+    // Contact
+    "contact.title": " 联系我",
+    "contact.name": "姓名",
+    "contact.email": "邮箱",
+    "contact.message": "消息",
+    "contact.send": "发送消息",
   },
 } as const;

@@ -1,12 +1,17 @@
 ---
 import ProjectCarousel from "~/components/common/ProjectCarousel";
+import { getLangFromUrl, useTranslations } from "~/i18n/utils";
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
 ---
 
 <section class="my-80">
   <div class="w-full">
-    <h2 class="text-2xl font-semibold mb-4 text-center">Featured Projects</h2>
+    <h2 class="text-2xl font-semibold mb-4 text-center">
+      {t("projects.featured")}
+    </h2>
     <div>
-      <ProjectCarousel client:visible />
+      <ProjectCarousel client:visible lang={lang} />
     </div>
   </div>
 </section>

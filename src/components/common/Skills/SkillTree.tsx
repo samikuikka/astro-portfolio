@@ -6,15 +6,18 @@ import CategoryNode from "./CategoryNode";
 import SkillNode from "./SkillNode";
 import SkillDialog from "./SkillDialog";
 import type { Skill, SkillCategory } from "~/types/skills";
+import type { Language } from "~/types/common";
 
 interface SkillTreeProps {
   skillCategories: SkillCategory[];
   currentYear: number;
+  lang: Language;
 }
 
 const SkillTree: React.FC<SkillTreeProps> = ({
   skillCategories,
   currentYear,
+  lang,
 }) => {
   // Dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -232,6 +235,7 @@ const SkillTree: React.FC<SkillTreeProps> = ({
         isOpen={isDialogOpen}
         onClose={closeDialog}
         skill={selectedSkill}
+        lang={lang}
       />
     </div>
   );

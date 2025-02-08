@@ -11,3 +11,10 @@ export function useTranslations(lang: keyof typeof ui) {
     return key in ui[lang] ? (ui[lang] as any)[key] : ui[defaultLang][key];
   };
 }
+
+export function getRouteFromUrl(url: URL): string {
+  const segments = url.pathname
+    .split("/")
+    .filter((segment) => segment.length > 0);
+  return segments.slice(1).join("/") || "";
+}

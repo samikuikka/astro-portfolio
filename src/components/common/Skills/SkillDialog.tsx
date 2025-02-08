@@ -7,18 +7,24 @@ import {
 } from "~/components/ui/dialog";
 import githubLogo from "../../../assets/logos/github.svg";
 import type { Skill } from "~/types/skills";
+import { useTranslations } from "~/i18n/utils";
+import type { Language } from "~/types/common";
 
 interface SkillDialogProps {
   isOpen: boolean;
   onClose: () => void;
   skill: Skill | null;
+  lang: Language;
 }
 
 const SkillDialog: React.FC<SkillDialogProps> = ({
   isOpen,
   onClose,
   skill,
+  lang,
 }) => {
+  const t = useTranslations(lang);
+
   return (
     <Dialog
       open={isOpen}
@@ -44,7 +50,9 @@ const SkillDialog: React.FC<SkillDialogProps> = ({
             </DialogDescription>
             {skill.projects && skill.projects.length > 0 && (
               <div className="mt-4">
-                <h3 className="text-md font-semibold mb-2">Projects:</h3>
+                <h3 className="text-md font-semibold mb-2">
+                  {t("skills.projects")}:
+                </h3>
                 <ul className="list-disc list-inside space-y-1">
                   {skill.projects.map((project, index) => (
                     <div>

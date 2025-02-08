@@ -1,5 +1,8 @@
 ---
+import { getLangFromUrl, useTranslations } from "~/i18n/utils";
 
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
 ---
 
 <section
@@ -15,7 +18,7 @@
 
   <div class="max-w-3xl mx-auto relative z-10">
     <h2 class="text-3xl font-heading font-bold text-heading text-center mb-8">
-      Get in Touch
+      {t("contact.title")}
     </h2>
 
     <form
@@ -25,7 +28,7 @@
     >
       <div class="mb-4">
         <label for="name" class="block text-sm font-medium text-muted mb-2">
-          Name
+          {t("contact.name")}
         </label>
         <input
           id="name"
@@ -39,7 +42,7 @@
 
       <div class="mb-4">
         <label for="email" class="block text-sm font-medium text-muted mb-2">
-          Email
+          {t("contact.email")}
         </label>
         <input
           id="email"
@@ -53,7 +56,7 @@
 
       <div class="mb-6">
         <label for="message" class="block text-sm font-medium text-muted mb-2">
-          Message
+          {t("contact.message")}
         </label>
         <textarea
           id="message"
@@ -70,7 +73,7 @@
         aria-label="Send message"
         class="w-full bg-secondary border border-gray-300 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
       >
-        Send Message
+        {t("contact.send")}
       </button>
     </form>
   </div>
