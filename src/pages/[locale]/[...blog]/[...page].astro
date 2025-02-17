@@ -1,0 +1,33 @@
+---
+import type { InferGetStaticPropsType, GetStaticPaths } from "astro";
+
+import Layout from "~/layouts/PageLayout.astro";
+import BlogList from "~/components/blog/List.astro";
+import Headline from "~/components/blog/Headline.astro";
+import Pagination from "~/components/blog/Pagination.astro";
+
+import { getStaticPathsBlogList } from "~/utils/blog";
+import { getCollection, getEntry } from "astro:content";
+
+const allBlogPosts = await getCollection("post");
+
+export const prerender = true;
+
+export const getStaticPaths = (async ({ paginate }) => {
+  return await getStaticPathsBlogList({ paginate });
+}) satisfies GetStaticPaths;
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+
+const { page } = Astro.props as Props;
+---
+
+<Layout>
+  <section class="px-6 sm:px-6 py-12 sm:py-16 lg:py-20 mx-auto max-w-4xl">
+    <Headline subtitle="List of my all blog posts, articles, and fun reads.">
+      The Blog
+    </Headline>
+    <BlogList posts={page.data} />
+    <Pagination prevUrl={page.url.prev} nextUrl={page.url.next} />
+  </section>
+</Layout>

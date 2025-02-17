@@ -1,0 +1,14 @@
+---
+import Layout from "~/layouts/Layout.astro";
+import Header from "~/components/widgets/Header.astro";
+import { headerData } from "~/navigation";
+---
+
+<Layout>
+  <slot name="header">
+    <Header {...headerData} isSticky showToggleTheme />
+  </slot>
+  <main>
+    <slot />
+  </main>
+</Layout>

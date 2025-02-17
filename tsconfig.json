@@ -1,6 +1,7 @@
 {
   "extends": "astro/tsconfigs/base",
   "compilerOptions": {
+    "lib": ["es2021", "dom"],
     "strictNullChecks": true,
     "allowJs": true,
     "baseUrl": ".",

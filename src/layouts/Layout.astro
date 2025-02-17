@@ -9,7 +9,6 @@ import Analytics from "@vercel/analytics/astro";
 
 // Comment the line below to disable View Transitions
 import { ClientRouter } from "astro:transitions";
-import { LanguagePicker } from "~/components/widgets/LanguagePicker";
 ---
 
 <!doctype html>
@@ -21,15 +20,13 @@ import { LanguagePicker } from "~/components/widgets/LanguagePicker";
     <Analytics />
 
     <!-- Comment the line below to disable View Transitions -->
-    <ClientRouter fallback="swap" />
+    <!-- <ClientRouter fallback="swap" /> -->
   </head>
 
   <body
     class="antialiased text-default bg-page overflow-x-hidden tracking-tight"
   >
     <slot />
-    <LanguagePicker client:load />
-
     <BasicScripts />
   </body>
 </html>

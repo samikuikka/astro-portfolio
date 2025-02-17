@@ -5,17 +5,22 @@ import Projects from "~/components/widgets/Projects.astro";
 import SkillReveal from "~/components/common/Skills/SkillReveal";
 import Contact from "~/components/widgets/Contact.astro";
 import { PinnedIntroduction } from "~/components/common/PinnedIntroduction";
-import { getLangFromUrl, useTranslations } from "~/i18n/utils";
+import { getLangFromUrl } from "~/i18n/utils";
+import Header from "~/components/widgets/Header.astro";
 
 const lang = getLangFromUrl(Astro.url);
-const t = useTranslations(lang);
 
 export async function getStaticPaths() {
   return [{ params: { locale: "en" } }, { params: { locale: "cn" } }];
 }
+import { headerData } from "~/navigation";
 ---
 
 <Layout>
+  <slot name="header">
+    <Header {...headerData} isSticky showToggleTheme />
+  </slot>
+
   <Hero />
   <PinnedIntroduction client:only="react" lang={lang} />
   <SkillReveal client:only="react" lang={lang} />
