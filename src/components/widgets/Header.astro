@@ -5,6 +5,7 @@ import Logo from "~/components/Logo.astro";
 import { trimSlash } from "~/utils/permalinks";
 import type { CallToAction } from "~/types";
 import { LanguagePicker } from "./LanguagePicker";
+import ToggleMenu from "../common/ToggleMenu.astro";
 
 interface Link {
   text?: string;
@@ -71,6 +72,10 @@ const currentPath = `/${trimSlash(new URL(Astro.url).pathname)}`;
       <a class="flex items-center" href="/">
         <Logo />
       </a>
+      <div class="flex items-center md:hidden space-x-2">
+        <LanguagePicker client:idle />
+        <ToggleMenu />
+      </div>
     </div>
     <nav
       class="items-center w-full md:w-auto hidden md:flex md:mx-5 text-default overflow-y-auto overflow-x-hidden md:overflow-y-visible md:overflow-x-auto md:justify-self-center"
@@ -102,7 +107,7 @@ const currentPath = `/${trimSlash(new URL(Astro.url).pathname)}`;
         "hidden md:self-center md:flex items-center md:mb-0 fixed w-full md:w-auto md:static justify-end left-0 rtl:left-auto rtl:right-0 bottom-0 p-3 md:p-0 md:justify-self-end",
       ]}
     >
-      <div class="items-center flex justify-between w-full md:w-auto">
+      <div class="items-center hidden md:flex justify-between w-full md:w-auto">
         <LanguagePicker client:idle />
       </div>
     </div>
