@@ -9,6 +9,7 @@ import Analytics from "@vercel/analytics/astro";
 
 // Comment the line below to disable View Transitions
 import { ClientRouter } from "astro:transitions";
+import { Toaster } from "~/components/ui/toaster";
 ---
 
 <!doctype html>
@@ -28,5 +29,6 @@ import { ClientRouter } from "astro:transitions";
   >
     <slot />
     <BasicScripts />
+    <Toaster client:only />
   </body>
 </html>

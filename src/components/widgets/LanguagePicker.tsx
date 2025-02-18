@@ -8,15 +8,30 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { languages } from "~/i18n/ui";
 import { getRouteFromUrl } from "~/i18n/utils";
+import { useToast } from "~/hooks/use-toast";
 
 export function LanguagePicker() {
+  const { toast } = useToast();
+
   let route = "";
   if (typeof window !== "undefined") {
     route = getRouteFromUrl(new URL(window.location.href));
   }
 
   const handleSelectLanguage = (langCode: string) => {
-    window.location.href = `/${langCode}/${route || ""}`;
+    const forcedLang = route.startsWith("blog") ? "en" : langCode;
+    const newUrl = `/${forcedLang}/${route || ""}`;
+
+    if (window.location.pathname !== newUrl) {
+      window.location.href = newUrl;
+    }
+
+    if (route.startsWith("blog") && langCode != "en") {
+      toast({
+        title: "Language not supported",
+        description: "The blog is only available in English at the moment.",
+      });
+    }
   };
 
   return (
