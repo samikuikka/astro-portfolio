@@ -12,6 +12,7 @@ const post = defineCollection({
       title: z.string(),
       excerpt: z.string().optional(),
       image: image().optional(),
+      tags: z.array(z.string()).optional(),
 
       author: z.string().optional(),
     }),

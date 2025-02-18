@@ -111,6 +111,7 @@ const getNormalizedPost = async (
     title,
     excerpt,
     image,
+    tags: rawTags = [],
     author,
     draft = false,
   } = data;
@@ -118,6 +119,11 @@ const getNormalizedPost = async (
   const slug = cleanSlug(id);
   const publishDate = new Date(rawPublishDate);
   const updateDate = rawUpdateDate ? new Date(rawUpdateDate) : undefined;
+
+  const tags = rawTags.map((tag: string) => ({
+    slug: cleanSlug(tag),
+    title: tag,
+  }));
 
   return {
     id: id,
@@ -129,6 +135,7 @@ const getNormalizedPost = async (
     }),
     publishDate: publishDate,
     updateDate: updateDate,
+    tags: tags,
 
     title: title,
     excerpt: excerpt,

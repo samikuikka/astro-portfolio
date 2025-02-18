@@ -17,6 +17,12 @@ export interface Post {
   Content?: AstroComponentFactory;
   content?: string;
   readingTime?: number;
+  tags?: Taxonomy[];
+}
+
+export interface Taxonomy {
+  slug: string;
+  title: string;
 }
 
 export interface CallToAction extends Omit<HTMLAttributes<"a">, "slot"> {
