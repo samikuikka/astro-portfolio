@@ -1,0 +1,210 @@
+---
+publishDate: 2025-02-24T00:00:00Z
+title: "Step-by-Step Guide to the Gaussian Basis Regression"
+excerpt: "Breaking down Gaussian Basis Regression step-by-step. Explaining the underlying math of transforming input data with Gaussian functions to coding solution using Python."
+image: "./gaussian-result.png"
+tags:
+  - ML
+  - Gaussian basis regression
+  - Python
+---
+import Latex from '../../components/common/Latex.astro';
+import InlineLatex from '../../components/common/InlineLatex.astro';
+import { Image } from 'astro:assets';
+import gaussianCenters from './gaussian-centers.png';
+import gaussianResult from './gaussian-result.png';
+
+
+# Step-by-Step Guide to the Gaussian Basis Regression
+
+In this post, I will go over Gaussian Basis Regression, a technique used in machine learning to model complex relationships between features and labels.
+I include both the mathematical background and the practical implementation using Python.
+
+## What's Gaussian Basis Regression?
+
+Gaussian Basis Regression is a type of regression analysis where feature vectors are transformed using Gaussian functions.
+
+What this means is that if we have a hypothesis function of the form:
+
+<Latex formula="h(x)=\textbf{w}^{T}x"/>
+
+Instead of using input featuresdirectly, we use feature map:
+
+<Latex formula="\Phi(x) = \bigl(\phi_{1}(x), \dots, \phi_{n}(x)\bigr)^{T}" />
+
+Thus our hypothesis function becomes:
+
+
+<Latex formula="h(x)=\textbf{w}^{T}\Phi(x)"/>
+
+We can use different types of basis function, but in this case, we will use Gaussian functions.
+Let's choose Gaussian function <InlineLatex formula="\phi_{\sigma,\mu}(x) = \exp\!\Bigl(-\tfrac{1}{2\,\sigma^2}\,\bigl(x - \mu\bigr)^2\Bigr)" /> as the basis function.
+
+Thus our design matrix will be:
+
+<Latex formula="\Phi_{i,j} = \phi_{\sigma,\mu_j}(x_i) = \exp\!\Bigl(-\tfrac{1}{2\,\sigma^2}\,\bigl(x_i - \mu_j\bigr)^2\Bigr)" />
+
+
+## Three Hyperparameters
+
+When setting up Gaussian function, we defined three hyperparameters that we need to choose:
+
+1) Number of Basis Functions (M)
+
+Number of Basis Functions (M) is term that tells us how many Gaussian functions we will use in our model.
+Let's give an example:
+
+Let's choose M=3, thus the design matrix becomes:
+
+<Latex formula="\Phi_{i,j} = \phi_{\sigma,\mu_j}(x_i) = \exp\!\Bigl(-\tfrac{1}{2\,\sigma^2}\,\bigl(x_i - \mu_j\bigr)^2\Bigr)" /> for j=1,2,3.
+
+
+2) Centers (μ)
+
+We first chose how many functions we will use, and now we need to choose where to place these functions.
+Centers (μ) is term that tells us where our Gaussian functions will be centered.
+
+There are different ways to choose centers, simplest is evenly by the data range. We could also use k-means clustering or other methods to choose the centers.
+
+Here's image where I have plot Gaussian functions with centers chosen evenly by the data range.
+
+<Image src={gaussianCenters} alt="Gaussian Centers" />
+
+
+3) Standard Deviation (σ)
+
+
+Standard Deviation (σ) is term that tells us how wide our Gaussian functions will be.
+This can also be understood as how big area of the data our Gaussian function will cover, bigger the area, more data points will be covered by the function.
+
+Common choice is to set σ to be equal to the distance between two adjacent centers.
+
+## Ordinare Least Squares
+
+Now that we know what are the hyperparameters for our Gaussian function.
+We can finally start talking how to optimize our model.
+
+Our predictions are in the form:
+
+<Latex formula="\hat{y} = \Phi\,\mathbf{w}." />
+
+To learn the weights, we can define a loss function and minimize it. One common choice is the Sum of Squared Errors (SSE) loss function.
+
+<Latex formula="\|\,y - \Phi\,\mathbf{w}\|^{2} = \bigl(y - \Phi\,\mathbf{w}\bigr)^{\top}\,\bigl(y - \Phi\,\mathbf{w}\bigr)" />
+
+Let's expand this into quadratic formula.
+
+<Latex formula="\bigl(y - \Phi\,\mathbf{w}\bigr)^{\top}\,\bigl(y - \Phi\,\mathbf{w}\bigr) = y^{\top}y \;-\; y^{\top}\Phi\,\mathbf{w} \;-\; \bigl(\Phi\,\mathbf{w}\bigr)^{\top}y \;+\; \bigl(\Phi\,\mathbf{w}\bigr)^{\top}\bigl(\Phi\,\mathbf{w}\bigr)." />
+
+And to further simplify it, we know that
+<Latex formula="y^{\top}\,\Phi\,\mathbf{w} = \bigl(y^{\top}\,\Phi\,\mathbf{w}\bigr)^{\top} = \bigl(\Phi\,\mathbf{w}\bigr)^{\top}y" />
+
+and 
+<Latex formula="\bigl(\Phi\,\mathbf{w}\bigr)^{\top}\,\bigl(\Phi\,\mathbf{w}\bigr) = \mathbf{w}^{\top}\,\bigl(\Phi^{\top}\,\Phi\bigr)\,\mathbf{w}" />
+
+Thus our loss function becomes
+
+<Latex formula="\mathrm{SSE}(w) =  y^{\top}y \;-\; 2\,y^{\top}\,\Phi\,w \;+\; w^{\top}\,\Phi^{\top}\,\Phi\,w " />
+
+From here we notice, that this actually is quadratic form!
+
+<Latex formula="\mathbf{w}^{\top} A\,\mathbf{w} \;+\; \mathbf{b}^{\top}\mathbf{w} \;+\; c."/>
+
+Where <InlineLatex formula="A=\Phi^{\top} \Phi" />, <InlineLatex formula="b=-2y^{T}\Phi"/> and <InlineLatex formula="c=y^{T}y" />
+
+And because it's in quadratic form, we can solve it by linear algebra if <InlineLatex formula="A"/> is invertible.
+
+This is done by taking the gradient w.r.t w.
+
+<Latex formula="\nabla_{\mathbf{w}}\,\|y - \Phi\,\mathbf{w}\|^{2} = -2\,\Phi^{\top}\,\bigl(y - \Phi\,\mathbf{w}\bigr)." />
+
+And by setting it to zero, we get
+
+<Latex formula="-2\,\Phi^{\top}\,\bigl(y - \Phi\,\mathbf{w}\bigr) = 0 \;\;\Longrightarrow\;\; \Phi^{\top}\,\Phi\,\mathbf{w} = \Phi^{\top}\,y" />
+
+Finally we can calculate the optimal weights!
+
+<Latex formula="\mathbf{w}^{*} = \bigl(\Phi^{\top}\,\Phi\bigr)^{-1}\,\Phi^{\top}\,y." />
+
+## Python Implementation
+
+Now that we know the math behind it, let's implement it in Python!
+
+First, as always, we need to get some data. I will generate some synthetic data.
+This time my data will be:
+
+<Latex formula="x \in [0,1], 
+\quad
+\epsilon \sim \mathcal{N}\bigl(0,\;0.1^2\bigr), 
+\quad
+y = \sin\bigl(2\pi x\bigr) + \epsilon." />
+
+And here's the code for it:
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(42)
+x = np.linspace(0, 1, 400)
+noise = np.random.normal(0, 0.1, size=x.shape)
+y = np.sin(2 * np.pi * x) + noise
+```
+
+
+After that we need to define the hyperparameters of the Gaussian function.
+
+I will use 10 evenly based centers, which width is the same as the distance between the centers.
+```python
+def gaussian_basis(x, centers, width):
+    return np.exp(-(x[:, None] - centers)**2 / (2 * width**2))
+
+M = 10
+centers = np.linspace(0, 1, M)
+sigma = (centers[1] - centers[0])
+Phi = gaussian_basis(x, centers, sigma)
+```
+
+Now to get the weights, we just need to solve the normal equations by the formula that we saw before.
+
+```python
+def solve_normal_equations(Phi, y):
+    return np.linalg.inv(Phi.T @ Phi) @ Phi.T @ y
+
+w = solve_normal_equations(Phi, y)
+```
+
+Notice how simple it is to solve the weights in this.
+However, this is good if the number of features or training examples is small.
+For large datasets, computing the inverse matrix can be computationally expensive and numerically unstable.
+
+Finally, we can plot the results of the regression and see if it fits well.
+
+```python
+x_plot = np.linspace(0, 1, 200)
+Phi_plot = gaussian_basis(x_plot, centers, sigma)
+y_plot = Phi_plot @ w
+
+plt.figure(figsize=(8, 4))
+plt.scatter(x, y, color="blue", label="Data", s=20)
+plt.plot(x_plot, y_plot, color="red", label="Gaussian Basis Fit", linewidth=2)
+plt.xlabel("x")
+plt.ylabel("y")
+plt.title("Gaussian Basis Regression via Normal Equations")
+plt.legend()
+plt.show()
+```
+
+As we can see, our simple model fits the data very well!
+Even though the data has some noice, the underlying model captures the trend of data.
+
+<Image src={gaussianResult} alt="Gaussian Basis Regression via Normal Equations" />
+
+## Conclusion
+
+In this post, we saw how to use Gaussian basis functions to fit a non-linear model to data.
+We also solved how to solve the weights using the normal equations.
+
+For the full code, you can check out the [GitHub repository](https://github.com/samikuikka/gaussian-basis-regression).
+
+
