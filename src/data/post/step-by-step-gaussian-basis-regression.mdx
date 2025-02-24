@@ -44,6 +44,19 @@ Thus our design matrix will be:
 
 <Latex formula="\Phi_{i,j} = \phi_{\sigma,\mu_j}(x_i) = \exp\!\Bigl(-\tfrac{1}{2\,\sigma^2}\,\bigl(x_i - \mu_j\bigr)^2\Bigr)" />
 
+### Why Gaussian Basis Regression?
+
+Why should we use Gaussian Basis Regression over Polynomial Regression or other types of regression?
+
+The main reason is that gaussian basis regression is localized. This means that each basis function is only active in a small region of the input space. This is useful when we have data that is not linear, but we don't know where the non-linearity is.
+
+For example, let's give an example of non-linear data:
+
+Consider temperature data from a city. The temperature at the morning is low, then it sharply increases in the afternoon.
+At the middle of the day the temperature can be high, but in the evening it decreases again.
+
+This type of change is not linear, but it is localized, e.g., we can estimate the temperature by Gaussian function that are centered at the morning, afternoon, and evening.
+Each of these Gaussian functions will be active in a small region of the input space, and will help us to estimate the temperature in that given region only!
 
 ## Three Hyperparameters
 
@@ -154,7 +167,7 @@ y = np.sin(2 * np.pi * x) + noise
 
 After that we need to define the hyperparameters of the Gaussian function.
 
-I will use 10 evenly based centers, which width is the same as the distance between the centers.
+I will use 10 evenly spaced centers, which width is the same as the distance between the centers.
 ```python
 def gaussian_basis(x, centers, width):
     return np.exp(-(x[:, None] - centers)**2 / (2 * width**2))
