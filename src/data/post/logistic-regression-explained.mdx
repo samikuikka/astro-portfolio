@@ -1,0 +1,263 @@
+---
+publishDate: 2025-02-27T00:00:00Z
+title: "Logistic Regression Explained: The Math & Code Behind Classification"
+excerpt: "Understanding logistic regression mathematically—exploring likelihood functions, gradient calculations, and how optimization works."
+image: "./logistic-regression-results.png"
+tags:
+  - ML
+  - Logistic regression
+  - Python
+---
+
+import Latex from "../../components/common/Latex.astro";
+import InlineLatex from "../../components/common/InlineLatex.astro";
+import { Image } from "astro:assets";
+import logisticRegressionData from "./logistic-regression-data.png";
+import logisticRegressionResults from "./logistic-regression-results.png";
+
+# Logistic Regression Explained: The Math & Code Behind Classification
+
+Logistic regression is widely used for ninary classification.
+This post explains its probability-based foundation, derives the gradient ascent, and shows how to implements all this in Python.
+
+## Logistic Regression Explained
+
+Logistic regression is an ML method used to classify data into two categories.
+It's called "logistic" because it uses the logistic function to model the probability of a binary outcome.
+Logistic regression tries to minimize the empirical risk.
+
+<Latex formula="\hat{L}(w \mid D) = \frac{1}{m} \sum_{i=1}^m \log\Bigl(1 + \exp\bigl(-y^{(i)}\,h^{(w)}\bigl(x^{(i)}\bigr)\bigr)\Bigr)" />
+
+Once we have the optimal weights, we can easily predict the class of a new data point:
+
+<Latex formula="\hat{y} = \begin{cases} 1, & \text{if } h^{(\hat{w})}(x) \ge 0,\\[6pt] -1, & \text{otherwise}. \end{cases}" />
+
+Mathematically, logistic function is
+
+<Latex formula="\sigma(z) = \frac{1}{1 + \exp(-z)}." />
+
+Using this in logistic regression we get
+
+<Latex formula="p(y = 1 \mid \mathbf{x}) = \sigma(\mathbf{w}^{\top} \mathbf{x}) = \frac{1}{1 + \exp(-\mathbf{w}^{\top} \mathbf{x})}." />
+
+What this means. is that the probability of a data point being in class 1 ig given by that logistic function.
+Because we use logistic function for binary data (0 or 1), we can also predict the data point being in class 0:
+
+<Latex
+  formula="p(y = 0 \mid \mathbf{x}) = 1 - \sigma(\mathbf{w}^{\top} \mathbf{x}).
+"
+/>
+
+And if we have N data points, each with feature vector <InlineLatex formula="x_n" /> and label <InlineLatex formula="y_n" />, we can write the likehood functions as:
+
+<Latex formula="p(y_n = 1 \mid \mathbf{x}_n; \mathbf{w}) = \sigma(\mathbf{w}^{\top} \mathbf{x}_n) = \frac{1}{1 + e^{-\mathbf{w}^{\top} \mathbf{x}_n}}." />
+
+and
+
+<Latex formula="p(y_n = 0 \mid \mathbf{x}_n; \mathbf{w}) = 1 - \sigma(\mathbf{w}^{\top} \mathbf{x}_n)." />
+
+## Bernoulli Distribution
+
+Before we can write the likelihood function, we must understand the Bernoulli distribution.
+The Bernoulli distribution is a simple probability distribution for random variable that can take only two values.
+
+The basic idea of it is that it "flips" value to 1 in probability <InlineLatex formula="p" /> and 0 in probability <InlineLatex formula="1 - p" />.
+
+<Latex formula="p(Y = y) = p^y (1 - p)^{1 - y}, \quad \text{for } y \in \{0,1\}." />
+
+In logistic regression, we have a similar goal, we want to predict the probability of the label being 1 or 0.
+So let's use Bernoulli distribution to model the probability of the label being 1 or 0.
+First we define the probability for flipping to 1 as
+
+<Latex formula="\pi_n = \sigma(\mathbf{w}^{\top} \mathbf{x}_n) = \frac{1}{1 + e^{-\mathbf{w}^{\top} \mathbf{x}_n}}." />
+
+This is also called as the sigmoid function.
+After that we can use the same logic as in the Bernoulli distribution to model the probability of the label being 1 or 0.
+
+<Latex formula="p(y_n = 1 \mid \mathbf{x}_n; \mathbf{w}) = \sigma(\mathbf{w}^{\top} \mathbf{x}_n), \quad p(y_n = 0 \mid \mathbf{x}_n; \mathbf{w}) = 1 - \sigma(\mathbf{w}^{\top} \mathbf{x}_n)." />
+
+This works for single data point, but we want to model the probability of the label being 1 or 0 for all data points.
+Thus we can assume that each <InlineLatex formula="y_n" /> is independent of each other given the weights <InlineLatex formula="\mathbf{w}" />. So we can write the likelihood function as:
+
+<Latex formula="p(\{y_n\} \mid \{x_n\}, \mathbf{w}) = \prod_{n=1}^{N} \Bigl[ \sigma(\mathbf{w}^{\top} \mathbf{x}_n) \Bigr]^{y_n} \Bigl[ 1 - \sigma(\mathbf{w}^{\top} \mathbf{x}_n) \Bigr]^{1 - y_n}." />
+
+This is also called as the likelihood function:
+
+<Latex formula="\mathcal{L}(\mathbf{w}) = \prod_{n=1}^{N} \Bigl[ \sigma(\mathbf{w}^{\top} \mathbf{x}_n) \Bigr]^{y_n} \Bigl[ 1 - \sigma(\mathbf{w}^{\top} \mathbf{x}_n) \Bigr]^{1 - y_n}." />
+
+However, this is a product of probabilities, which is hard to work with. So we take the logarithm of the likelihood function to get the log-likelihood function:
+
+<Latex formula="\log \mathcal{L}(\mathbf{w}) = \log \left[ \prod_{n=1}^{N} \Bigl( \sigma(\mathbf{w}^{\top} \mathbf{x}_n) \Bigr)^{y_n} \Bigl( 1 - \sigma(\mathbf{w}^{\top} \mathbf{x}_n) \Bigr)^{1 - y_n} \right]." />
+
+which can be further simplified using logarithmic rules to:
+
+<Latex formula="\log \mathcal{L}(\mathbf{w}) = \sum_{n=1}^{N} \Bigl[ y_n \log \sigma(\mathbf{w}^{\top} \mathbf{x}_n) + (1 - y_n) \log \bigl(1 - \sigma(\mathbf{w}^{\top} \mathbf{x}_n)\bigr) \Bigr]." />
+
+## Optimization & Learning Approach
+
+We now have our likehood function, but we need to find the weights that maximize it.
+So we need to find the weights that maximize the log-likelihood function.
+
+<Latex formula="\hat{\mathbf{w}} = \arg\max_{\mathbf{w}} \log \mathcal{L}(\mathbf{w})." />
+
+Well, now that we know what we want to maximize, we also need to find a way to do it.
+This is where gradient ascent comes in.
+I have written about gradient descent in my previous posts, so I won't go into too much details.
+How gradient ascent differs from gradient descent is that we are trying to maximize the function, not minimize it.
+
+<Latex formula="\mathbf{w}^{(t+1)} = \mathbf{w}^{(t)} + \eta \nabla \ell (\mathbf{w}^{(t)})," />
+
+So our log-likehood function becomes:
+
+<Latex formula="\ell(\mathbf{w}) = \sum_{n=1}^{N} \Bigl[ y_n \log \sigma(z_n) + (1 - y_n) \log \bigl(1 - \sigma(z_n)\bigr) \Bigr]," />
+
+where
+
+<Latex formula="z_n = \mathbf{w}^{\top} \mathbf{x}_n \quad \text{and} \quad \sigma(z) = \frac{1}{1 + e^{-z}}." />
+
+We need gradient of this in respect to the weights.
+So let's calculate it for only single term first.
+
+<Latex formula="\ell_n(\mathbf{w}) = y_n \log \sigma(z_n) + (1 - y_n) \log \bigl(1 - \sigma(z_n)\bigr)." />
+
+Let's derive it in respect to the weights.
+
+We can notice that <InlineLatex formula="z_n=w^Tx_n"/> , so by the chain rule we have
+
+<Latex formula="\frac{\partial z_n}{\partial \mathbf{w}} = \mathbf{x}_n." />
+
+Then we can get the sigmoid function as
+
+<Latex formula="\sigma'(z) = \sigma(z) \bigl(1 - \sigma(z)\bigr)." />
+
+Differentiating the first part gives us:
+
+<Latex formula="\frac{\partial}{\partial \mathbf{w}} \Bigl[ y_n \log \sigma(z_n) \Bigr] = y_n \cdot \frac{1}{\sigma(z_n)} \cdot \sigma'(z_n) \mathbf{x}_n = y_n \cdot \frac{\sigma(z_n) (1 - \sigma(z_n))}{\sigma(z_n)} \mathbf{x}_n = y_n (1 - \sigma(z_n)) \mathbf{x}_n." />
+
+and the second part
+
+<Latex formula="\frac{\partial}{\partial \mathbf{w}} \Bigl[ (1 - y_n) \log (1 - \sigma(z_n)) \Bigr] = (1 - y_n) \cdot \frac{1}{1 - \sigma(z_n)} \cdot \Bigl[ -\sigma'(z_n) \Bigr] \mathbf{x}_n." />
+<Latex formula="= -(1 - y_n) \cdot \frac{\sigma(z_n) (1 - \sigma(z_n))}{1 - \sigma(z_n)} \mathbf{x}_n = -(1 - y_n) \sigma(z_n) \mathbf{x}_n." />
+
+Combining this result with the previous one we get:
+
+<Latex formula="\frac{\partial \ell_n(\mathbf{w})}{\partial \mathbf{w}} = y_n (1 - \sigma(z_n)) \mathbf{x}_n - (1 - y_n) \sigma(z_n) \mathbf{x}_n." />
+
+and by factoring we finally obtain:
+
+<Latex formula="= \Bigl[ y_n (1 - \sigma(z_n)) - (1 - y_n) \sigma(z_n) \Bigr] \mathbf{x}_n." />
+
+Inside part of the brackets can be simplified to
+
+<Latex formula="y_n (1 - \sigma(z_n)) - (1 - y_n) \sigma(z_n) = y_n - y_n \sigma(z_n) - \sigma(z_n) + y_n \sigma(z_n) = y_n - \sigma(z_n)." />
+
+Thus for single point we get
+
+<Latex formula="\frac{\partial \ell_n(\mathbf{w})}{\partial \mathbf{w}} = \bigl(y_n - \sigma(z_n)\bigr) \mathbf{x}_n." />
+
+Now that we know how to get the gradient for a single point, we can get the gradient for the whole dataset by summing over all points:
+
+<Latex formula="\nabla \ell(\mathbf{w}) = \sum_{n=1}^{N} \bigl(y_n - \sigma(\mathbf{w}^{\top} \mathbf{x}_n)\bigr) \mathbf{x}_n." />
+
+Thus the rule for updating the weights is:
+
+<Latex formula="\mathbf{w}^{(t+1)} = \mathbf{w}^{(t)} + \eta \sum_{n=1}^{N} \bigl(y_n - \sigma(\mathbf{w}^{(t)\top} \mathbf{x}_n)\bigr) \mathbf{x}_n." />
+
+## Implementation
+
+Now that we have the gradient descent rule, we can implement it in Python. We will use NumPy for matrix operations.
+First, let import the necessary libraries and generate some data to test our implementation:
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+np.random.seed(42)
+num_samples = 200
+x1_class0 = np.random.normal(loc=2, scale=1, size=(num_samples // 2, 2))
+x1_class1 = np.random.normal(loc=5, scale=1, size=(num_samples // 2, 2))
+
+y_class0 = np.zeros((num_samples // 2, 1))
+y_class1 = np.ones((num_samples // 2, 1))
+
+X = np.vstack((x1_class0, x1_class1))
+y = np.vstack((y_class0, y_class1)).flatten()
+```
+
+The data is visualized as follows:
+
+<Image src={logisticRegressionData} alt="Logistic Regression Data" />
+
+After that I preprocess the data.
+
+```python
+N = len(X)
+train_ratio = 0.8
+train_size = int(N * train_ratio)
+
+indices = np.random.permutation(N)
+train_idx, test_idx = indices[:train_size], indices[train_size:]
+X_train, y_train = X[train_idx], y[train_idx]
+X_test, y_test = X[test_idx], y[test_idx]
+
+X_train = np.hstack((np.ones((X_train.shape[0], 1)), X_train))
+X_test = np.hstack((np.ones((X_test.shape[0], 1)), X_test))
+
+mean_X_train = np.mean(X_train[:, 1:], axis=0)
+std_X_train = np.std(X_train[:, 1:], axis=0)
+
+X_train[:, 1:] = (X_train[:, 1:] - mean_X_train) / std_X_train
+X_test[:, 1:] = (X_test[:, 1:] - mean_X_train) / std_X_train
+```
+
+Notice that we add a column of ones to the data to account for the bias term in the hypothesis function.
+Why is that?
+
+The bias term is a constant that allows the model to shift the decision boundary away from the origin (0,0).
+This way our decision boundary is not forced to pass through the origin, which makes the model more flexible and allows it to fit the data better.
+Also, we normalize the data to have zero mean and unit variance.
+This is important because it ensures that the features are on the same scale, which helps the gradient descent algorithm to converge faster.
+
+Then we define the gradient ascent algorithm to find the optimal weights.
+
+```python
+learning_rate = 0.01
+num_iterations = 1000
+weights = np.zeros(X_train.shape[1])
+
+def sigmoid(z):
+    return 1 / (1 + np.exp(-z))
+
+for i in range(num_iterations):
+    preds = sigmoid(np.dot(X_train, weights))
+    gradient = np.dot((y_train - preds), X_train)
+    weights += learning_rate * gradient
+```
+
+We notice that the weight update rule is same as the one in the math section!
+
+<Latex formula="\mathbf{w}^{(t+1)} = \mathbf{w}^{(t)} + \eta \sum_{n=1}^{N} \bigl(y_n - \sigma(\mathbf{w}^{(t)\top} \mathbf{x}_n)\bigr) \mathbf{x}_n." />
+
+Let's see how well our model performs on the test set.
+
+```python
+test_preds = sigmoid(np.dot(X_test, weights))
+predicted_labels = (test_preds >= 0.5).astype(int)
+
+accuracy = np.mean(predicted_labels == y_test)
+print(f"Accuracy: {accuracy * 100:.2f}%")
+```
+
+Accuracy: 100.00%
+Works great! Our model has 100% accuracy on the test set.
+
+I also visualized the decision boundary of our model to this picture.
+
+<Image src={logisticRegressionResults} alt="Logistic Regression Results" />
+
+## Summary
+
+In this post we learned the basics of logistic regression and how it can be used to classify binary data.
+Oour model was able to achieve 100% accuracy on the test set.
+
+For the full code, you can check out the [GitHub repository](https://github.com/samikuikka/logistic-regression).
