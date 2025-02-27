@@ -17,7 +17,7 @@ import logisticRegressionResults from "./logistic-regression-results.png";
 
 # Logistic Regression Explained: The Math & Code Behind Classification
 
-Logistic regression is widely used for ninary classification.
+Logistic regression is widely used for binary classification.
 This post explains its probability-based foundation, derives the gradient ascent, and shows how to implements all this in Python.
 
 ## Logistic Regression Explained
@@ -48,7 +48,7 @@ Because we use logistic function for binary data (0 or 1), we can also predict t
 "
 />
 
-And if we have N data points, each with feature vector <InlineLatex formula="x_n" /> and label <InlineLatex formula="y_n" />, we can write the likehood functions as:
+And if we have N data points, each with feature vector <InlineLatex formula="x_n" /> and label <InlineLatex formula="y_n" />, we can write the likelihood functions as:
 
 <Latex formula="p(y_n = 1 \mid \mathbf{x}_n; \mathbf{w}) = \sigma(\mathbf{w}^{\top} \mathbf{x}_n) = \frac{1}{1 + e^{-\mathbf{w}^{\top} \mathbf{x}_n}}." />
 
@@ -126,7 +126,7 @@ We can notice that <InlineLatex formula="z_n=w^Tx_n"/> , so by the chain rule we
 
 <Latex formula="\frac{\partial z_n}{\partial \mathbf{w}} = \mathbf{x}_n." />
 
-Then we can get the sigmoid function as
+Then we can get the sigmoid function using the chain rule
 
 <Latex formula="\sigma'(z) = \sigma(z) \bigl(1 - \sigma(z)\bigr)." />
 
@@ -159,7 +159,7 @@ Now that we know how to get the gradient for a single point, we can get the grad
 
 <Latex formula="\nabla \ell(\mathbf{w}) = \sum_{n=1}^{N} \bigl(y_n - \sigma(\mathbf{w}^{\top} \mathbf{x}_n)\bigr) \mathbf{x}_n." />
 
-Thus the rule for updating the weights is:
+Unlike gradient descent (which minimizes error), we use gradient ascent because we are maximizing the likelihood function. Thus the rule for updating the weights is
 
 <Latex formula="\mathbf{w}^{(t+1)} = \mathbf{w}^{(t)} + \eta \sum_{n=1}^{N} \bigl(y_n - \sigma(\mathbf{w}^{(t)\top} \mathbf{x}_n)\bigr) \mathbf{x}_n." />
 
