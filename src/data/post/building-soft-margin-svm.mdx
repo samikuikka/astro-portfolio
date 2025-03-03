@@ -18,7 +18,7 @@ import { Image } from "astro:assets";
 # Building a Soft Margin SVM in Python with a Quadratic Solver
 
 Support Vector Machine (SVM) is a powerful way to classify binary labeled data.
-In this post I go over the math behind SVM and who how to implement a soft margin SVM in Python using a quadratic solver.
+In this post I go over the math behind SVM and how to implement a soft margin SVM in Python using a quadratic solver.
 
 ## What is Support Vector Machine?
 
@@ -31,7 +31,7 @@ SVM tries to find a hyperplane that separates the two classes with the maximum m
 
 <Latex formula="\underbrace{h(\mathbf{x}^{(i)})}_{\mathbf{w}^{\top} \mathbf{x}^{(i)}} > 0 \text{ for } \mathbf{x}^{(i)} \in \mathcal{C}^{(y=1)} \quad \text{and} \quad \underbrace{h(\mathbf{x}^{(i)})}_{\mathbf{w}^{\top} \mathbf{x}^{(i)}} < 0 \text{ for } \mathbf{x}^{(i)} \in \mathcal{C}^{(y=-1)}." />
 
-Here's figure depicting the devision of the hyperplane and the data points closest to the hyperplane (also known as support vectors).
+Here's figure depicting the division of the hyperplane and the data points closest to the hyperplane (also known as support vectors).
 
 <Image src={svmExample} alt="SVM Example" />
 
