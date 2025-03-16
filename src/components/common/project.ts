@@ -3,6 +3,7 @@ import oldPortfolio from "../../assets/images/old-portfolio.png";
 import aiCreator from "../../assets/images/ai-creator.png";
 import eCommerce from "../../assets/images/e-commerce.png";
 import workoutLogger from "../../assets/images/workout-logger.png";
+import realEstate from "../../assets/images/real-estate.png";
 
 export interface Project {
   id: number;
@@ -13,6 +14,13 @@ export interface Project {
 }
 
 export const getProjects = (t: (key: string) => string): Project[] => [
+  {
+    id: 6,
+    title: t("projects.realEstate.title"),
+    description: t("projects.realEstate.description"),
+    imageUrl: realEstate.src,
+    technologies: ["Python", "Next.js", "Scikit learn"],
+  },
   {
     id: 1,
     title: t("projects.portfolio.title"),

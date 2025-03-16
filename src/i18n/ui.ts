@@ -88,6 +88,9 @@ export const ui = {
 
     // Projects
     "projects.featured": "Featured Projects",
+    "projects.realEstate.title": "Real Estate Price Prediction",
+    "projects.realEstate.description":
+      "A machine learning model to predict real estate prices. Using web scraped data to predict prices of real estate in Helsinki, Finland.",
     "projects.portfolio.title": "Portfolio",
     "projects.portfolio.description":
       "This portfolio website! Hope you like it! :)",
@@ -192,6 +195,9 @@ export const ui = {
 
     // Projects
     "projects.featured": "推荐项目",
+    "projects.realEstate.title": "房地产价格预测",
+    "projects.realEstate.description":
+      "一个用于预测房地产价格的机器学习模型。使用网络抓取的数据来预测芬兰赫尔辛基的房地产价格。",
     "projects.portfolio.title": "作品集",
     "projects.portfolio.description": "这是我的作品集网站！希望你喜欢！:)",
     "projects.aiGameContentCreator.title": "AI 游戏内容生成器",
