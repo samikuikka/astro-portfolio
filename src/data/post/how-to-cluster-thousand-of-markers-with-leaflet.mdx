@@ -1,0 +1,226 @@
+---
+publishDate: 2025-03-25T00:00:00Z
+title: "Mapping Millions: How to Cluster Thousands of Markers with Next.js, Leaflet, and Supercluster"
+excerpt: "Guide on how to display thousands of markers on a leaflet map using supercluster and next.js"
+image: "./map-markers.png"
+tags:
+  - Next.js
+  - Leaflet
+  - Supercluster
+---
+
+import { Image } from "astro:assets";
+import mapWithoutCluster from "./china-map-without-clusters.png";
+import clusterGif from "./cluster.gif";
+
+# Mapping Millions: How to Cluster Thousands of Markers with Next.js, Leaflet, and Supercluster
+
+When building web maps that display thousand, or even millions of markers, the performance and user experience quickly
+become a challenge. In this blog post, I'll walk through how I learned to use Supercluster to turned a slow, unresponsive leaflet map into a fast, interactive map that can handle thousands of markers without reducing the user experience.
+This backend clustering approach ensures that only a manageable number of markers are displayed at any given time.
+
+## Why Clustering Matters
+
+<Image src={mapWithoutCluster} alt="Map without clusters" />
+
+In my side project, I have been working on a web project which maps the Chinese attraction ratings on a map.
+The data set contains over 10,000 attractions, each with a official government rating from 1 to 5 stars.
+My initial thought was to simply add a marker for each attraction on the map, but as you can see in the image above, the map quickly becomes cluttered and painfully slow to interact with.
+
+So, I needed a way to showcase all the attractions without overwhelming the user with too many markers.
+Well, that's where clustering comes in.
+Rendering each marker individually overwhelms the browser, but if we create clustering groups, that take all the nearby markers and display them as a single marker, we can reduce the number of markers displayed on the map.
+When the user zooms in, the clusters split into smaller clusters or individual points.
+
+## Client-side vs. Server-side Clustering
+
+The next step was to decide whether to cluster the markers on the client-side or server-side.
+The easier approach is to cluster the markers on the client-side, due to leaflet plugins like Leaflet.markercluster.
+
+However, client-side clustering has its limitations. In order to ake it work, you need to load all the markers at once!
+This is not a problem if you have a small number of markers, but when you have thousands or millions of markers, it can quickly become a performance bottleneck.
+In my testing, I found that client-side clustering was not a viable option for my project, the initial load time was too slow to make the user experience acceptable.
+
+Backend clustering addresses this problem by processing the data on the server. Only clusters for the current viewport and zoom level are sent to the client. This minimizes bandwidth usage and reduces client-side processing.
+In my solution, I utilized [Supercluster](https://github.com/mapbox/supercluster), a high-performance clustering library suitable for Leaflet maps.
+
+## Setting Up Data
+
+Before we can start clustering, we need data to be in GeoJSON format.
+If you know your markers longitude and latitude, you can easily convert them to GeoJSON format.
+Here's example of the needed property for GeoJSON:
+
+```json
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [110.2910622, 25.2779894]
+      }
+    }
+  ]
+}
+```
+
+I used a simple script to update my data to GeoJSON format.
+
+## Building Backend Clustering Endpoint
+
+Next, I set up Next.js API route to handle the clustering.
+
+```typescript
+import { NextResponse } from "next/server";
+import clientPromise from "@/lib/mongodb";
+import Supercluster from "supercluster";
+
+// Global variable to cache the Supercluster index
+let superclusterIndex = null;
+
+// Function to build the index from your MongoDB documents
+async function buildIndex() {
+  const client = await clientPromise;
+  const db = client.db("main");
+  const collection = db.collection("attractions");
+
+  // Fetch all documents (since data is static)
+  const docs = await collection.find({}).toArray();
+
+  // Map documents to GeoJSON features (using the pre-stored "geojson" field)
+  const features = docs.map((doc) => doc.geojson);
+
+  // Initialize Supercluster with a larger radius for coarser clustering when zoomed out
+  const index = new Supercluster({
+    radius: 60, // cluster radius in pixels (adjust as needed)
+    maxZoom: 16, // maximum zoom level at which clusters are generated
+  });
+  index.load(features);
+  return index;
+}
+
+export async function GET(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const boundsParam = searchParams.get("bounds");
+    const zoom = Number(searchParams.get("zoom")) || 0;
+
+    if (!boundsParam) {
+      return NextResponse.json(
+        { error: "Bounds parameter is required" },
+        { status: 400 }
+      );
+    }
+
+    // Expected format: "minLat,minLng,maxLat,maxLng"
+    const [minLat, minLng, maxLat, maxLng] = boundsParam.split(",").map(Number);
+    // Supercluster expects bounding box as [west, south, east, north]
+    const bbox = [minLng, minLat, maxLng, maxLat];
+
+    // Build the index if not yet built
+    if (!superclusterIndex) {
+      superclusterIndex = await buildIndex();
+    }
+
+    // Query clusters for the current viewport (bbox) and zoom level.
+    const clusters = superclusterIndex.getClusters(bbox, zoom);
+    return NextResponse.json(clusters);
+  } catch (error) {
+    console.error("Error fetching clusters:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+```
+
+### Key Points in the Code
+
+- The `buildIndex` function fetches all documents from MongoDB and converts them to GeoJSON features.
+  In my case, I had a pre-stored `geojson` field in my documents.
+  Since the data in this case is static, I only need to build the index once.
+
+- Bounding Box Conversion:
+  The endpoint converts the query parameter into a bounding box array in the order `[west, south, east, north]` as required by Supercluster.
+
+- Querying Clusters:
+  The `superclusterIndex.getClusters(bbox, zoom)` function returns an array of clusters (or individual points) based on the current viewport and zoom level.
+
+## Frontend integration with Leaflet
+
+On the frontend, I used react-leaflet to display the map and fetch the clusters from the backend.
+I have a rather simple setup with a map component where fetch the new clusters when user moves on the map.
+
+```typescript
+const map = useMapEvents({
+  moveend: async () => {
+    const bounds = map.getBounds();
+    const zoom = map.getZoom();
+    const boundsParam = [
+      bounds.getSouthWest().lat,
+      bounds.getSouthWest().lng,
+      bounds.getNorthEast().lat,
+      bounds.getNorthEast().lng,
+    ].join(",");
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `/api/attractions?bounds=${boundsParam}&zoom=${zoom}&ratings=${selectedRatings.join(
+          ","
+        )}`
+      );
+      const data = await response.json();
+      setAttractions(data);
+    } catch (error) {
+      console.error("Error fetching attractions:", error);
+    } finally {
+      setLoading(false);
+    }
+  },
+});
+```
+
+This is then used to render the attractions (either clusters or individual points) on the map.
+
+```html
+<MapContainer
+    center={[35.8617, 104.1954]} // center
+    zoom={5}
+    style={{ height: "100%", width: "100%" }}
+    minZoom={4}
+    maxBounds={[
+    [3.86, 73.55], // Southwest corner
+    [53.55, 135.09], // Northeast corner
+    ]}
+>
+    <TileLayer
+    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    />
+    <MapUpdater
+    selectedRatings={selectedRatings}
+    setAttractions={setAttractions}
+    setLoading={setLoading}
+    />
+    {attractions.map((attraction, index) => (
+    <MapMarker
+        key={index}
+        attraction={attraction}
+        onClick={() => handleMarkerClick(attraction)}
+    />
+    ))}
+</MapContainer>
+```
+
+Since the API now returns clusters as GeoJSON features, you can map over them directly in your component.
+All the clustering logic is handled on the server, so the frontend only needs to fetch the clusters for the current viewport and zoom level.
+
+## Conclusion
+
+<Image src={clusterGif} alt="Cluster GIF" />
+
+By moving the clusters on the backend using Supercluster, you can handle efficiently large datasets without overwhelming the client browser.
+The Supercluster library allows us to create high performance clustering with a single API endpoint.
+Hope this guide helped you to build a efficient clustering solution on your web maps.
