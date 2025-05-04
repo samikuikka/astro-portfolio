@@ -107,6 +107,10 @@ export const ui = {
     "projects.workoutLogger.description":
       "Full stack application for logging workouts. This project was a part of a full stack course in Aalto University.",
 
+    "projects.mapShowcase.title": "PlanChinaTrips",
+    "projects.mapShowcase.description":
+      "Full stack application for travel planning in China. Using government attraction rating system to showcase the best places to visit. Built with Next.js and Leaflet, with Stripe payment integration.",
+
     // Contact
     "contact.title": " Get in Touch",
     "contact.name": "Name",
