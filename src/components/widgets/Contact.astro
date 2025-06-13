@@ -22,10 +22,15 @@ const t = useTranslations(lang);
     </h2>
 
     <form
-      action="https://formspree.io/f/mqaebbba"
+      action="https://api.web3forms.com/submit"
       method="POST"
       class="rounded-lg px-8 py-6 z-10 border-[rgba(255,255,255,0.10)] bg-[rgba(40,40,40,0.70)] shadow-[2px_4px_16px_0px_rgba(248,248,248,0.06)_inset]"
     >
+      <input
+        type="hidden"
+        name="access_key"
+        value="eb6aadc8-f093-4fc7-ba9f-8c9869a07202"
+      />
       <div class="mb-4">
         <label for="name" class="block text-sm font-medium text-muted mb-2">
           {t("contact.name")}
