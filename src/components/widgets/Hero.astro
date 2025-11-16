@@ -21,7 +21,9 @@ const latestPostUrl = latestPostPermalink
 <section
   class="relative flex flex-col-reverse lg:flex-col items-center justify-between px-4 md:px-4 lg:px-10"
 >
-  <Spotlight client:only="react" />
+  <div class="hidden md:block">
+    <Spotlight client:only="react" />
+  </div>
 
   <!-- Left Section: Text Content -->
   <div
@@ -34,7 +36,7 @@ const latestPostUrl = latestPostPermalink
           title={`Read: ${latestPost.title}`}
           class="inline-flex items-center gap-3 rounded-full border border-emerald-400/40 bg-emerald-500/10 px-4 py-2 text-left text-emerald-100 transition hover:border-emerald-300 hover:bg-emerald-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
         >
-          <span class="font-mono text-[0.6rem] tracking-[0.25em] uppercase text-emerald-300">
+          <span class="font-mono shrink-0 text-[0.6rem] tracking-[0.25em] uppercase text-emerald-300">
             [ New ]
           </span>
           <span class="text-sm font-medium text-white">{latestPost.title}</span>
@@ -50,13 +52,13 @@ const latestPostUrl = latestPostPermalink
     >
       {t("hero.name")}
       <span
-        class="bg-gradient-to-r bg-clip-text text-4xl md:text-6xl font-heading font-bold leading-tight text-heading"
+        class="bg-gradient-to-r bg-clip-text text-3xl md:text-6xl font-heading font-bold leading-tight text-heading"
         >Sami!</span
       >
     </h1>
 
     <span
-      class="block text-5xl p-1 bg-white text-black font-mono font-bold tracking-[0.15em] uppercase"
+      class="block text-xl md:text-5xl p-1 bg-white text-black font-mono font-bold tracking-[0.15em] uppercase"
       data-text="AI Engineer & Agentic Systems Builder"
       id="glitch-role"
     >
@@ -96,7 +98,7 @@ const latestPostUrl = latestPostPermalink
     </div>
   </div>
 
-  <div class="w-full flex justify-center py-10 z-10 relative">
+  <div class="hidden md:flex w-full justify-center py-10 z-10 relative">
     <div
       class="relative w-full max-w-4xl font-mono text-[10px] md:text-[11px] text-slate-200"
     >
