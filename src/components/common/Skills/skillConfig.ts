@@ -3,19 +3,44 @@ import nextjsLogo from "../../../assets/logos/nextdotjs.svg";
 import angularLogo from "../../../assets/logos/angular.svg";
 import dotnetLogo from "../../../assets/logos/dotnet.svg";
 import nodejsLogo from "../../../assets/logos/nodedotjs.svg";
-import dockerLogo from "../../../assets/logos/docker.svg";
 import astroLogo from "../../../assets/logos/astro.svg";
 import pythonLogo from "../../../assets/logos/python.svg";
-import kubernetesLogo from "../../../assets/logos/kubernetes.svg";
-import mongodbLogo from "../../../assets/logos/mongodb.svg";
-import mysqlLogo from "../../../assets/logos/mysql.svg";
-import postgresqlLogo from "../../../assets/logos/postgresql.svg";
-import redisLogo from "../../../assets/logos/redis.svg";
+import workflowLogo from "../../../assets/logos/workflow.svg";
+import sparklesLogo from "../../../assets/logos/sparkles.svg";
+import dataZapLogo from "../../../assets/logos/database-zap.svg";
+
 import type { SkillCategory } from "~/types/skills";
 
 export const getSkillCategories = (
   t: (key: string) => string
 ): SkillCategory[] => [
+  {
+    name: t("skills.ai"),
+    color: "#feca57",
+    skills: [
+      {
+        name: t("skills.agent-systems.title"),
+        level: 5,
+        year: 2023,
+        logo: workflowLogo.src,
+        description: t("skills.agent-systems.description"),
+      },
+      {
+        name: t("skills.prompt-optimization.title"),
+        level: 5,
+        year: 2025,
+        logo: sparklesLogo.src,
+        description: t("skills.prompt-optimization.description"),
+      },
+      {
+        name: t("skills.rag.title"),
+        level: 5,
+        year: 2023,
+        logo: dataZapLogo.src,
+        description: t("skills.rag.description"),
+      },
+    ],
+  },
   {
     name: t("skills.frontend"),
     color: "#ff6b6b",
@@ -97,131 +122,22 @@ export const getSkillCategories = (
       {
         name: t("skills.backend.python.name"),
         level: 4,
-        year: 2023,
+        year: 2021,
         logo: pythonLogo.src,
         description: t("skills.backend.python.description"),
       },
       {
         name: t("skills.backend.java.name"),
         level: 4,
-        year: 2023,
+        year: 2021,
         description: t("skills.backend.java.description"),
       },
       {
         name: t("skills.backend.dotnet.name"),
         level: 4,
-        year: 2023,
+        year: 2021,
         logo: dotnetLogo.src,
         description: t("skills.backend.dotnet.description"),
-      },
-    ],
-  },
-  {
-    name: t("skills.devops"),
-    color: "#feca57",
-    skills: [
-      {
-        name: t("skills.devops.docker.name"),
-        level: 3,
-        year: 2021,
-        logo: dockerLogo.src,
-        description: t("skills.devops.docker.description"),
-        projects: [
-          {
-            name: "Chat application",
-            description:
-              "A web based chat application with Kubernetes load-balancing.",
-            url: "https://github.com/samikuikka/Chat-application",
-          },
-          {
-            name: "Code grader",
-            description: "A web based code grader for programming courses.",
-            url: "https://github.com/samikuikka/code-grader",
-          },
-        ],
-      },
-      {
-        name: t("skills.devops.kubernetes.name"),
-        level: 3,
-        year: 2021,
-        logo: kubernetesLogo.src,
-        description: t("skills.devops.kubernetes.description"),
-        projects: [
-          {
-            name: "Chat application",
-            description:
-              "A web based chat application with Kubernetes load-balancing.",
-            url: "https://github.com/samikuikka/Chat-application",
-          },
-        ],
-      },
-      {
-        name: t("skills.devops.cicd.name"),
-        level: 3,
-        year: 2023,
-        description: t("skills.devops.cicd.description"),
-      },
-    ],
-  },
-  {
-    name: t("skills.database"),
-    color: "#ff9f43",
-    skills: [
-      {
-        name: t("skills.database.mongodb.name"),
-        level: 4,
-        year: 2021,
-        logo: mongodbLogo.src,
-        description: t("skills.database.mongodb.description"),
-        projects: [
-          {
-            name: "Workout logger",
-            description:
-              "Backend implementation for workout logging endpoints.",
-            url: "https://github.com/samikuikka/workout-logger-backend",
-          },
-        ],
-      },
-      {
-        name: t("skills.database.postgresql.name"),
-        level: 4,
-        year: 2021,
-        logo: postgresqlLogo.src,
-        description: t("skills.database.postgresql.description"),
-        projects: [
-          {
-            name: "Chat application",
-            description:
-              "A web based chat application with Kubernetes load-balancing.",
-            url: "https://github.com/samikuikka/Chat-application",
-          },
-          {
-            name: "Code grader",
-            description: "A web based code grader for programming courses.",
-            url: "https://github.com/samikuikka/code-grader",
-          },
-        ],
-      },
-      {
-        name: t("skills.database.mysql.name"),
-        level: 4,
-        year: 2019,
-        logo: mysqlLogo.src,
-        description: t("skills.database.mysql.description"),
-      },
-      {
-        name: t("skills.database.redis.name"),
-        level: 4,
-        year: 2023,
-        logo: redisLogo.src,
-        description: t("skills.database.redis.description"),
-        projects: [
-          {
-            name: "Code grader",
-            description: "A web based code grader for programming courses.",
-            url: "https://github.com/samikuikka/code-grader",
-          },
-        ],
       },
     ],
   },

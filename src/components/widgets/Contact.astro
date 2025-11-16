@@ -7,32 +7,33 @@ const t = useTranslations(lang);
 
 <section
   id="contact"
-  class="relative py-12 px-4 md:px-6 lg:px-20 overflow-hidden bg-page"
+  class="relative py-20 px-4 md:px-6 lg:px-20 border-t border-border overflow-hidden bg-black"
 >
-  <div class="absolute inset-0 z-0">
-    <div
-      class="w-full h-full bg-gradient-to-tl from-red-500 via-wave-default to-wave-fast opacity-20"
-    >
-    </div>
+  <!-- Background Glow -->
+  <div class="absolute inset-0 z-0 pointer-events-none">
+    <div class="absolute inset-0 opacity-20"></div>
+    <div class="absolute inset-0 bg-[url('/noise.png')] opacity-[0.04]"></div>
   </div>
 
   <div class="max-w-3xl mx-auto relative z-10">
-    <h2 class="text-3xl font-heading font-bold text-heading text-center mb-8">
+    <h2 class="text-4xl font-heading font-bold text-white text-center mb-10">
       {t("contact.title")}
     </h2>
 
     <form
       action="https://api.web3forms.com/submit"
       method="POST"
-      class="rounded-lg px-8 py-6 z-10 border-[rgba(255,255,255,0.10)] bg-[rgba(40,40,40,0.70)] shadow-[2px_4px_16px_0px_rgba(248,248,248,0.06)_inset]"
+      class="rounded-2xl px-10 py-10 border border-white/10 bg-white/5 backdrop-blur-md shadow-[0_0_40px_-10px_rgba(255,255,255,0.2)]"
     >
       <input
         type="hidden"
         name="access_key"
         value="eb6aadc8-f093-4fc7-ba9f-8c9869a07202"
       />
-      <div class="mb-4">
-        <label for="name" class="block text-sm font-medium text-muted mb-2">
+
+      <!-- Name -->
+      <div class="mb-6">
+        <label for="name" class="block text-sm font-medium text-gray-300 mb-2">
           {t("contact.name")}
         </label>
         <input
@@ -41,12 +42,13 @@ const t = useTranslations(lang);
           name="name"
           placeholder="Your Name"
           required
-          class="w-full border text-black border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary"
+          class="w-full border border-white/20 bg-black/20 text-white rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-white"
         />
       </div>
 
-      <div class="mb-4">
-        <label for="email" class="block text-sm font-medium text-muted mb-2">
+      <!-- Email -->
+      <div class="mb-6">
+        <label for="email" class="block text-sm font-medium text-gray-300 mb-2">
           {t("contact.email")}
         </label>
         <input
@@ -55,12 +57,16 @@ const t = useTranslations(lang);
           name="_replyto"
           placeholder="you@example.com"
           required
-          class="w-full border text-black border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary"
+          class="w-full border border-white/20 bg-black/20 text-white rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-white"
         />
       </div>
 
-      <div class="mb-6">
-        <label for="message" class="block text-sm font-medium text-muted mb-2">
+      <!-- Message -->
+      <div class="mb-8">
+        <label
+          for="message"
+          class="block text-sm font-medium text-gray-300 mb-2"
+        >
           {t("contact.message")}
         </label>
         <textarea
@@ -69,14 +75,15 @@ const t = useTranslations(lang);
           rows="5"
           placeholder="Your Message..."
           required
-          class="w-full border text-black border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary"
+          class="w-full border border-white/20 bg-black/20 text-white rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-white"
         ></textarea>
       </div>
 
+      <!-- Submit -->
       <button
         type="submit"
         aria-label="Send message"
-        class="w-full bg-secondary border border-gray-300 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+        class="w-full bg-white text-black font-semibold py-3 px-4 rounded-lg border border-white/20 hover:bg-gray-200 transition-colors"
       >
         {t("contact.send")}
       </button>

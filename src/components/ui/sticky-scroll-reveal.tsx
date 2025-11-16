@@ -60,7 +60,7 @@ export function StickyScroll({ content }: { content: StickyScrollItem[] }) {
 
         {/* 2) The animated fill line */}
         <motion.div
-          className="absolute left-2 top-0 w-[2px] bg-purple-500"
+          className="absolute left-2 top-0 w-[2px] bg-emerald-500"
           animate={{ height: fillHeight }}
           transition={{ type: "spring", duration: 0.5 }}
         />
@@ -80,7 +80,7 @@ export function StickyScroll({ content }: { content: StickyScrollItem[] }) {
               className={cn(
                 "h-4 w-4 rounded-full border-2 border-white transition-all",
                 idx === activeCard
-                  ? "bg-purple-500 scale-125"
+                  ? "bg-emerald-500 scale-125"
                   : "bg-neutral-200"
               )}
             />
@@ -129,13 +129,15 @@ export const Card = ({
   return (
     <div
       className={cn(
-        "hidden lg:block h-full w-full mx-auto rounded-xl border border-[rgba(255,255,255,0.10)] bg-[rgba(40,40,40,0.70)] shadow-[2px_4px_16px_0px_rgba(248,248,248,0.06)_inset] group",
+        "hidden lg:block relative rounded-xl h-full w-full mx-auto  border border-gray-700 bg-[rgba(5,5,5,0.95)] shadow-[0_0_40px_rgba(0,0,0,0.8)] overflow-hidden",
         className
       )}
     >
+      {/* Grid background layer */}
       <div
         className={cn(
-          "absolute p-1 [mask-image:radial-gradient(50%_50%_at_50%_50%,white_0%,transparent_100%)] inset-0 grid grid-cols-50 grid-rows-50 gap-0.5 pointer-events-none"
+          "absolute inset-0 [mask-image:radial-gradient(50%_50%_at_50%_50%,white_0%,transparent_100%)] pointer-events-none z-10",
+          "grid grid-cols-50 grid-rows-50 gap-0.5"
         )}
         style={{
           gridTemplateColumns: "repeat(50, 1fr)",
@@ -145,11 +147,13 @@ export const Card = ({
         {Array.from({ length: 2500 }).map((_, idx) => (
           <div
             key={idx}
-            className="w-full h-full bg-[#00010e] opacity-20 rounded-sm"
+            className="w-full h-full bg-[#54cc5a] opacity-10 rounded-sm"
           />
         ))}
       </div>
-      {children}
+
+      {/* Content layer */}
+      <div className="relative z-20 h-full">{children}</div>
     </div>
   );
 };
@@ -166,9 +170,10 @@ export const CardSkeletonContainer = ({
   return (
     <div
       className={cn(
-        "h-full rounded-xl z-40",
+        "h-full rounded-xl",
         className,
-        showGradient && "bg-[rgba(40,40,40,0.70)]"
+        // make this transparent or very subtle so grid is visible
+        showGradient && "bg-transparent"
       )}
     >
       {children}

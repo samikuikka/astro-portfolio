@@ -1,31 +1,69 @@
 ---
 import { Spotlight } from "../ui/spotlight-new";
 import { getLangFromUrl, useTranslations } from "~/i18n/utils";
+import { fetchPosts } from "~/utils/blog";
+import { getPermalink } from "~/utils/permalinks";
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
+const locale = lang || "en";
+
+const posts = await fetchPosts();
+const latestPost = posts[0];
+const latestPostPermalink = latestPost
+  ? latestPost.permalink.replace("%locale%", locale)
+  : undefined;
+const latestPostUrl = latestPostPermalink
+  ? getPermalink(latestPostPermalink, "post", locale)
+  : undefined;
 ---
 
 <section
-  class="relative flex flex-col-reverse lg:flex-row items-center justify-end md:justify-between h-screen px-4 md:px-6 lg:px-20 bg-page"
+  class="relative flex flex-col-reverse lg:flex-col items-center justify-between px-4 md:px-4 lg:px-10"
 >
   <Spotlight client:only="react" />
 
   <!-- Left Section: Text Content -->
-  <div class="w-full lg:w-1/2 relative z-10 space-y-2 md:space-y-6">
-    <p class="text-xl text-primary font-medium">{t("hero.hello")}</p>
+  <div
+    class="w-full flex flex-col items-center py-10 relative z-10 space-y-2 md:space-y-6"
+  >
+    {
+      latestPost && latestPostUrl ? (
+        <a
+          href={latestPostUrl}
+          title={`Read: ${latestPost.title}`}
+          class="inline-flex items-center gap-3 rounded-full border border-emerald-400/40 bg-emerald-500/10 px-4 py-2 text-left text-emerald-100 transition hover:border-emerald-300 hover:bg-emerald-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+        >
+          <span class="font-mono text-[0.6rem] tracking-[0.25em] uppercase text-emerald-300">
+            [ New ]
+          </span>
+          <span class="text-sm font-medium text-white">{latestPost.title}</span>
+        </a>
+      ) : (
+        <p class="font-mono text-xs tracking-[0.25em] uppercase text-emerald-300/80">
+          [ Agent Stack Active ]
+        </p>
+      )
+    }
     <h1
-      class="text-4xl md:text-6xl font-heading font-bold leading-tight text-heading"
+      class="text-4xl pt-10 pb-4 md:text-6xl font-heading font-bold leading-tight text-heading"
     >
-      {t("hero.name")}<span
-        class="bg-gradient-to-r bg-clip-text text-transparent from-white via-purple-500 to-pink-400"
-        >Sami Kuikka</span
+      {t("hero.name")}
+      <span
+        class="bg-gradient-to-r bg-clip-text text-4xl md:text-6xl font-heading font-bold leading-tight text-heading"
+        >Sami!</span
       >
     </h1>
-    <p class="text-lg text-muted max-w-md">
+
+    <span
+      class="block text-5xl p-1 bg-white text-black font-mono font-bold tracking-[0.15em] uppercase"
+      data-text="AI Engineer & Agentic Systems Builder"
+      id="glitch-role"
+    >
       {t("hero.subtitle")}
-    </p>
-    <div class="flex flex-wrap gap-4 mt-6">
+    </span>
+
+    <div class="flex flex-wrap gap-4 mt-6 pt-10">
       <a
         href="#contact"
         title="Contact button"
@@ -58,10 +96,199 @@ const t = useTranslations(lang);
     </div>
   </div>
 
-  <div
-    class="w-full lg:w-1/2 md:mb-8 lg:mb-0 flex justify-center z-10 relative"
-  >
-    <video
+  <div class="w-full flex justify-center py-10 z-10 relative">
+    <div
+      class="relative w-full max-w-4xl font-mono text-[10px] md:text-[11px] text-slate-200"
+    >
+      <div
+        class="grid grid-cols-[1.3fr,0.25fr,2.3fr,0.25fr,1.3fr] items-stretch gap-1"
+      >
+        <!-- INPUT COLUMN -->
+        <div class="flex items-center justify-center h-full">
+          <div
+            class="rounded-lg border border-slate-700/70 bg-black/70 shadow-[0_0_40px_rgba(0,0,0,0.7)]"
+          >
+            <div
+              class="flex items-center justify-between px-2 py-1 border-b border-slate-700/70 text-[0.6rem] tracking-[0.18em] uppercase text-slate-400"
+            >
+              <span>INPUT</span>
+              <span class="text-[0.55rem] text-slate-500">PORT: 01</span>
+            </div>
+            <div class="px-2 h-[100px] w-[190pxs] py-2 space-y-1 leading-snug">
+              <p class="text-[0.65rem] text-emerald-400">
+                <span>&gt; </span>
+                <span id="hacker-input" class="inline-block"></span>
+              </p>
+
+              <p class="text-[0.6rem] text-slate-500">
+                user_profile:
+                <span class="text-slate-300">explorer · budget mid</span>
+              </p>
+              <p class="text-[0.6rem] text-slate-500">
+                constraints:
+                <span class="text-slate-300">max_travel = 40km/day</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONNECTOR LEFT -->
+        <div class="flex items-center justify-center h-full">
+          <div class="flex flex-col gap-1.5">
+            <div
+              class="relative h-px w-20 border-t border-dashed border-amber-400/60"
+            >
+              <span
+                class="absolute -top-1 h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.9)] animate-flowRight"
+              ></span>
+            </div>
+            <div
+              class="relative h-px w-20 border-t border-dashed border-amber-400/60"
+            >
+              <span
+                class="absolute -top-1 h-2 w-2 rounded-full bg-amber-300 shadow-[0_0_10px_rgba(56,189,248,0.9)] animate-flowRight [animation-delay:0.3s]"
+              ></span>
+            </div>
+            <div
+              class="relative h-px w-20 border-t border-dashed border-amber-400/60"
+            >
+              <span
+                class="absolute -top-1 h-2 w-2 rounded-full bg-amber-200 shadow-[0_0_10px_rgba(110,231,183,0.9)] animate-flowRight [animation-delay:0.6s]"
+              ></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- AGENT ENGINE (BIGGER CENTER CARD) -->
+        <div
+          class="rounded-lg border h-full border-slate-700/70 bg-black/80 shadow-[0_0_50px_rgba(0,0,0,0.9)] min-h-[16rem] lg:min-h-[18rem] flex flex-col justify-center"
+        >
+          <div
+            class="flex items-center justify-between px-3 py-2 border-b border-slate-700/70 text-[0.6rem] tracking-[0.18em] uppercase text-slate-400"
+          >
+            <span>AGENT ENGINE</span>
+            <span class="text-[0.55rem] text-slate-500">SANDBOX</span>
+          </div>
+
+          <div class="px-4 pt-2 h-full pb-2">
+            <p
+              class="text-[0.65rem] text-cyan-300/90 flex items-center gap-2 mb-2"
+            >
+              <span
+                class="inline-flex h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse"
+              ></span>
+              RUNNING TOOLS...
+            </p>
+
+            <pre
+              class="text-[0.58rem] mt-2 leading-[0.7rem] text-center text-slate-500 select-none">
+  .   .   <span class="text-amber-400 animate-nodeBlink [animation-delay:0.05s]">✶</span>   .   .
+    . <span class="text-amber-400 animate-nodeBlink [animation-delay:0.35s]">✶</span> <span class="text-slate-400 animate-nodeBlink [animation-delay:0.9s]">✶</span> <span class="text-amber-400 animate-nodeBlink [animation-delay:0.6s]">✶</span> .
+  . <span class="text-slate-400 animate-nodeBlink [animation-delay:0.15s]">✶</span> <span class="text-amber-400 animate-nodeBlink [animation-delay:0.75s]">✶</span> <span class="text-slate-400 animate-nodeBlink [animation-delay:1.05s]">✶</span> <span class="text-amber-400 animate-nodeBlink [animation-delay:0.45s]">✶</span> .
+    . <span class="text-amber-400 animate-nodeBlink [animation-delay:1.2s]">✶</span> <span class="text-slate-400 animate-nodeBlink [animation-delay:0.25s]">✶</span> <span class="text-amber-400 animate-nodeBlink [animation-delay:0.95s]">✶</span> .
+  .   .   <span class="text-amber-400 animate-nodeBlink [animation-delay:0.55s]">✶</span>   .   .
+</pre>
+
+            <div
+              id="agent-log"
+              class="mt-10 space-y-0.5 text-[0.6rem] text-slate-400"
+            >
+              <p class="agent-log-line flex items-center gap-1">
+                <span class="inline-flex h-1 w-1 rounded-full bg-emerald-400"
+                ></span>
+                <span class="agent-log-text"></span>
+              </p>
+              <p class="agent-log-line flex items-center gap-1">
+                <span class="inline-flex h-1 w-1 rounded-full bg-emerald-300/90"
+                ></span>
+                <span class="agent-log-text"></span>
+              </p>
+              <p class="agent-log-line flex items-center gap-1">
+                <span class="inline-flex h-1 w-1 rounded-full bg-amber-300/90"
+                ></span>
+                <span class="agent-log-text"></span>
+              </p>
+              <p
+                class="agent-log-line flex items-center gap-1 text-cyan-300/90"
+              >
+                <span
+                  class="inline-flex h-1 w-1 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.9)]"
+                ></span>
+                <span class="agent-log-text"></span>
+              </p>
+            </div>
+          </div>
+
+          <div
+            class="px-2 py-1 border-t border-slate-700/70 text-[0.55rem] text-slate-500 flex items-center justify-between"
+          >
+            <span>CPU: 4 · TOOLS: 5</span>
+            <span>MODE: multi-agent</span>
+          </div>
+        </div>
+
+        <!-- CONNECTOR RIGHT -->
+        <div class="flex items-center justify-center h-full">
+          <div class="flex flex-col gap-1.5">
+            <div
+              class="relative h-px w-20 border-t border-dashed border-amber-400/60"
+            >
+              <span
+                class="absolute -top-1 h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.9)] animate-flowRight"
+              ></span>
+            </div>
+            <div
+              class="relative h-px w-20 border-t border-dashed border-amber-400/60"
+            >
+              <span
+                class="absolute -top-1 h-2 w-2 rounded-full bg-amber-300 shadow-[0_0_10px_rgba(56,189,248,0.9)] animate-flowRight [animation-delay:0.3s]"
+              ></span>
+            </div>
+            <div
+              class="relative h-px w-20 border-t border-dashed border-amber-400/60"
+            >
+              <span
+                class="absolute -top-1 h-2 w-2 rounded-full bg-amber-200 shadow-[0_0_10px_rgba(110,231,183,0.9)] animate-flowRight [animation-delay:0.6s]"
+              ></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- OUTPUT COLUMN -->
+        <div class="flex items-center justify-center h-full">
+          <div
+            class="rounded-lg border border-slate-700/70 bg-black/70 shadow-[0_0_40px_rgba(0,0,0,0.7)]"
+          >
+            <div
+              class="flex items-center justify-between px-2 py-1 border-b border-slate-700/70 text-[0.6rem] tracking-[0.18em] uppercase text-slate-400"
+            >
+              <span>OUTPUT</span>
+              <span class="text-[0.55rem] text-slate-500">PLAN: V1</span>
+            </div>
+            <div
+              class="px-2 py-2 w-[190px] h-[100px] overflow-hidden space-y-1 leading-snug text-[0.6rem] flex flex-col justify-between"
+            >
+              <p class="text-emerald-300">
+                <span class="text-white">Day 1 - </span><span
+                  id="hacker-output-1"></span>
+              </p>
+              <p class="text-emerald-300">
+                <span class="text-white">Day 2 - </span><span
+                  id="hacker-output-2"></span>
+              </p>
+              <p class="text-emerald-300">
+                <span class="text-white">Day 3 - </span><span
+                  id="hacker-output-3"></span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- <video
       class="max-w-full h-auto object-contain"
       width="600"
       height="600"
@@ -74,6 +301,272 @@ const t = useTranslations(lang);
       <source src="/hero-2.webm" type="video/webm" />
 
       Your browser does not support the video tag.
-    </video>
-  </div>
-</section>
+    </video> -->
+
+<script is:inline>
+  const scenarios = [
+    {
+      input: '"Plan 3 days in Beijing"',
+      output: [
+        "Forbidden City, Jingshan, Hutongs",
+        "Great Wall (Mutianyu) & local food",
+        "Temple of Heaven & parks",
+      ],
+    },
+    {
+      input: '"Weekend in Shanghai"',
+      output: [
+        "The Bund, Yu Garden, Old Town",
+        "Lujiazui skyline & museums",
+        "French Concession & cafes",
+      ],
+    },
+    {
+      input: '"Find hidden gems in Xi\'an"',
+      output: [
+        "City Walls & Muslim Quarter",
+        "Terracotta Army & local food",
+        "Pagodas & parks",
+      ],
+    },
+    {
+      input: '"Create tour in Chengdu"',
+      output: [
+        "People’s Park & old streets",
+        "Giant Panda base & hotpot",
+        "Temples & tea houses",
+      ],
+    },
+  ];
+
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-={}[]";
+
+  const inputEl = document.getElementById("hacker-input");
+  const outputEls = [
+    document.getElementById("hacker-output-1"),
+    document.getElementById("hacker-output-2"),
+    document.getElementById("hacker-output-3"),
+  ];
+
+  if (inputEl && outputEls.every(Boolean)) {
+    let currentScenario = 0;
+    let isAnimating = false;
+
+    const animateText = (el, target, totalFrames = 26) => {
+      const len = target.length;
+      let frame = 0;
+      const chars = new Array(len).fill("");
+
+      return new Promise((resolve) => {
+        const step = () => {
+          frame++;
+          let done = true;
+          const progress = frame / totalFrames;
+
+          for (let i = 0; i < len; i++) {
+            const revealPoint = i / len;
+
+            if (progress < revealPoint) {
+              chars[i] = letters[Math.floor(Math.random() * letters.length)];
+              done = false;
+            } else {
+              chars[i] = target[i];
+            }
+          }
+
+          el.textContent = chars.join("");
+
+          if (!done) {
+            requestAnimationFrame(step);
+          } else {
+            resolve();
+          }
+        };
+
+        step();
+      });
+    };
+
+    const cycle = async () => {
+      isAnimating = true;
+      const scenario = scenarios[currentScenario];
+
+      // animate input + all 3 output lines in parallel
+      await Promise.all([
+        animateText(inputEl, scenario.input, 48),
+        ...scenario.output.map((line, idx) =>
+          animateText(outputEls[idx], line, 42)
+        ),
+      ]);
+
+      isAnimating = false;
+      currentScenario = (currentScenario + 1) % scenarios.length;
+    };
+
+    // initial run
+    cycle();
+
+    // cycle every 3.8 seconds
+    setInterval(() => {
+      if (!isAnimating) {
+        cycle();
+      }
+    }, 4800);
+  }
+
+  // Rolling agent log (center panel) with enter/exit animation
+  const logContainer = document.getElementById("agent-log");
+
+  if (logContainer) {
+    const logLines = Array.from(
+      logContainer.querySelectorAll(".agent-log-line")
+    );
+    const logTextSpans = Array.from(
+      logContainer.querySelectorAll(".agent-log-text")
+    );
+
+    const logMessages = [
+      "findAttractions() → 124 candidates",
+      "clusterByLocation() → 7 clusters",
+      "rankByValue() → scoring top days",
+      "generateItinerary() → draft v1",
+      "scoreItineraryEM() → +10% vs baseline",
+      "cacheResult() → key=beijing_3d_mid",
+      "refinePlan() → compressed travel distance",
+      "exportPlan() → .json .md .ics",
+    ];
+
+    let startIndex = 0;
+    const animDuration = 220; // ms, match logLineOut/logLineIn duration
+
+    const renderLog = () => {
+      logTextSpans.forEach((span, idx) => {
+        const msg = logMessages[(startIndex + idx) % logMessages.length];
+        span.textContent = msg;
+      });
+    };
+
+    // initial content
+    renderLog();
+
+    setInterval(() => {
+      const firstLine = logLines[0];
+      const lastLine = logLines[logLines.length - 1];
+
+      // 0) clear any previous animations so we can re-trigger
+      logLines.forEach((line) => {
+        line.classList.remove("animate-logLineOut", "animate-logLineIn");
+      });
+
+      // force reflow so animations restart cleanly
+      // eslint-disable-next-line no-unused-expressions
+      firstLine.offsetHeight;
+
+      // 1) animate the first (oldest) line out
+      firstLine.classList.add("animate-logLineOut");
+
+      setTimeout(() => {
+        // 2) rotate the window & redraw all texts
+        startIndex = (startIndex + 1) % logMessages.length;
+        renderLog();
+
+        // force reflow before animating bottom line in
+        // eslint-disable-next-line no-unused-expressions
+        lastLine.offsetHeight;
+
+        // 3) animate the last (newest) line in
+        lastLine.classList.add("animate-logLineIn");
+
+        // 4) optional: clean up after in-animation
+        setTimeout(() => {
+          lastLine.classList.remove("animate-logLineIn");
+        }, animDuration);
+      }, animDuration);
+    }, 3600);
+  }
+</script>
+
+<script is:inline>
+  const GLITCH_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-={}[]";
+
+  function attachPerLetterGlitch(
+    el,
+    {
+      glitchFraction = 0.85, // fraction of non-space characters that will ever glitch
+      framesPerCycle = 3, // how many random chars before going back to original
+      frameDelay = 300, // ms between each random char
+      minDelay = 4200, // min time between glitch cycles
+      maxDelay = 6200, // max time between glitch cycles
+    } = {}
+  ) {
+    if (!el) return;
+
+    const original = el.textContent;
+    const len = original.length;
+
+    // pick which indices can glitch (never spaces)
+    const candidateIndices = [];
+    for (let i = 0; i < len; i++) {
+      if (original[i] !== " ") candidateIndices.push(i);
+    }
+
+    const targetCount = Math.max(
+      1,
+      Math.floor(candidateIndices.length * glitchFraction)
+    );
+
+    // shuffle candidates
+    for (let i = candidateIndices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [candidateIndices[i], candidateIndices[j]] = [
+        candidateIndices[j],
+        candidateIndices[i],
+      ];
+    }
+
+    // fixed set of indices that will glitch
+    const glitchIndices = candidateIndices.slice(0, targetCount);
+
+    const runCycle = () => {
+      let frame = 0;
+
+      const step = () => {
+        if (frame >= framesPerCycle) {
+          // restore original and schedule next cycle
+          el.textContent = original;
+          const nextDelay = minDelay + Math.random() * (maxDelay - minDelay);
+          setTimeout(runCycle, nextDelay);
+          return;
+        }
+
+        const chars = original.split("");
+
+        // for this frame, each glitch index gets a random glitch char
+        glitchIndices.forEach((idx) => {
+          chars[idx] =
+            GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
+        });
+
+        el.textContent = chars.join("");
+        frame++;
+        setTimeout(step, frameDelay);
+      };
+
+      step();
+    };
+
+    // start first cycle after a random delay
+    const initialDelay = minDelay + Math.random() * (maxDelay - minDelay);
+    setTimeout(runCycle, initialDelay);
+  }
+
+  const roleEl = document.getElementById("glitch-role");
+
+  attachPerLetterGlitch(roleEl, {
+    glitchFraction: 0.6,
+    framesPerCycle: 4,
+    frameDelay: 100,
+    minDelay: 4000,
+    maxDelay: 5000,
+  });
+</script>

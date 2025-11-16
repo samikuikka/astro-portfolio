@@ -17,13 +17,17 @@ import { headerData } from "~/navigation";
 ---
 
 <Layout>
+  <div class=""></div>
   <slot name="header">
     <Header {...headerData} isSticky showToggleTheme />
   </slot>
-
-  <Hero />
-  <PinnedIntroduction client:only="react" lang={lang} />
-  <SkillReveal client:only="react" lang={lang} />
-  <Projects />
-  <Contact />
+  <div class="w-full flex justify-center">
+    <div class="max-w-5xl mt-10 border border-gray-700">
+      <Hero />
+      <PinnedIntroduction client:only="react" lang={lang} />
+      <SkillReveal client:only="react" lang={lang} />
+      <Projects />
+      <Contact />
+    </div>
+  </div>
 </Layout>

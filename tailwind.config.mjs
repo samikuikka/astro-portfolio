@@ -61,6 +61,7 @@ export default {
       },
       fontFamily: {
         sans: [
+          "IBM Plex Sans", // ← your Fontsource font
           "var(--aw-font-sans, ui-sans-serif)",
           ...defaultTheme.fontFamily.sans,
         ],
@@ -69,6 +70,7 @@ export default {
           ...defaultTheme.fontFamily.serif,
         ],
         heading: [
+          "IBM Plex Sans",
           "var(--aw-font-heading, ui-sans-serif)",
           ...defaultTheme.fontFamily.sans,
         ],
@@ -81,8 +83,39 @@ export default {
         neonHex: "neonHex 2s linear infinite",
         waveVeryFast: "wave 3s forwards",
         shimmer: "shimmer 2s linear infinite",
+        flowRight: "flowRight 1.8s linear infinite",
+        nodeBlink: "nodeBlink 2.4s ease-in-out infinite",
+        logLineOut: "logLineOut 0.22s ease-out",
+        logLineIn: "logLineIn 0.22s ease-out",
+        glitch: "glitch 0.9s infinite steps(2, jump-none)",
       },
       keyframes: {
+        glitch: {
+          "0%": { transform: "translate(0,0)", opacity: "1" },
+          "20%": { transform: "translate(-1px,1px)" },
+          "40%": { transform: "translate(-2px,-1px)", opacity: "0.9" },
+          "60%": { transform: "translate(1px,1px)" },
+          "80%": { transform: "translate(1px,-1px)" },
+          "100%": { transform: "translate(0,0)", opacity: "1" },
+        },
+        logLineOut: {
+          "0%": { opacity: "1", transform: "translateY(0)" },
+          "100%": { opacity: "0", transform: "translateY(-0.25rem)" },
+        },
+        logLineIn: {
+          "0%": { opacity: "0", transform: "translateY(0.25rem)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        nodeBlink: {
+          "0%, 20%": { opacity: "0.1", transform: "scale(0.9)" },
+          "30%, 55%": { opacity: "1", transform: "scale(1.1)" },
+          "65%, 100%": { opacity: "0.2", transform: "scale(0.95)" },
+        },
+        flowRight: {
+          "0%": { transform: "translateX(0)", opacity: "0" },
+          "10%": { opacity: "1" },
+          "100%": { transform: "translateX(5rem)", opacity: "0" },
+        },
         shimmer: {
           from: {
             backgroundPosition: "0 0",

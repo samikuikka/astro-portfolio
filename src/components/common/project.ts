@@ -64,19 +64,4 @@ export const getProjects = (t: (key: string) => string): Project[] => [
     imageUrl: oldPortfolio.src,
     technologies: ["Astro", "React", "TailwindCSS", "Vercel"],
   },
-  {
-    id: 4,
-    title: t("projects.eCommercePlatform.title"),
-    description: t("projects.eCommercePlatform.description"),
-    imageUrl: eCommerce.src,
-    technologies: ["Dart", "Flutter", "Riverpod"],
-    codeUrl: "https://github.com/samikuikka/Portfolio",
-  },
-  {
-    id: 5,
-    title: t("projects.workoutLogger.title"),
-    description: t("projects.workoutLogger.description"),
-    imageUrl: workoutLogger.src,
-    technologies: ["React", "Node.js", "Express", "MongoDB", "Typescript"],
-  },
 ];

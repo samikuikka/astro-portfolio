@@ -8,31 +8,34 @@ export const defaultLang = "en";
 export const ui = {
   en: {
     "hero.hello": "Hello",
-    "hero.name": "I'm ",
-    "hero.subtitle":
-      "a Finnish full stack engineer who loves building scalable systems.",
+    "hero.name": "Hi, I'm",
+    "hero.subtitle": "AI ENGINEER & BUILDER",
     "hero.contact": "Contact me",
     "about.introduction":
-      "Hello, I'm Sami Kuikka—a passionate full-stack software engineer from Finland. I specialize in building scalable, robust systems that solve real-world challenges.",
+      "Hello, I'm Sami Kuikka—a passionate builder from Finland. Creating AI-native applications at the Bind AI startup. Interested in web development, AI Agents, and cloud-native technologies.",
     "about.about": "About me",
     "timeline.bachelor.title": "Bachelor's Beginnings",
     "timeline.bachelor.description":
       "Started on a Bachelor's degree in Computer Science, laying the foundational knowledge with limited prior coding experience.",
-    "timeline.master.title": "Mastering Web Technologies",
+    "timeline.master.title": "MSc in Web Technologies",
     "timeline.master.description":
-      "Pursued a Master's degree in Web Technologies, Applications, and Science. Developed a keen interest in web development, especially enjoying working with React, Next.js, Astro, and Node.js.",
-    "timeline.vertex.title": "Software Engineer at Vertex Systems",
+      "Research on cloud-native systems, microservices, and networking at Aalto University. Built a strong foundation in systems design and web technologies.",
+    "timeline.vertex.title": "Full-stack Engineer & Scrum Master at Vertex",
     "timeline.vertex.description":
-      "Joined Vertex Systems as a full-time Software Engineer, focusing primarily on Angular frontend development. Completed a master thesis on service meshes and API gateways in Kubernetes, and became proficient with cloud-native technologies such as Kubernetes and Docker.",
+      "Built and scaled a cloud-native CAD document platform (Angular, microservices, Azure). Learned how to ship production-grade systems.",
     "timeline.fullstack.title": "Full Stack Developer & Scrum Master",
-    "timeline.fullstack.description":
-      "Transitioned to a Full Stack Developer role, gaining proficiency in Java, .NET, and Python. Took on Scrum Master responsibilities to enhance team collaboration and project management.",
+    "timeline.ai_side_projects.title": "LLM & Agent Experiments",
+    "timeline.ai_side_projects.description":
+      "Started building AI agents, itinerary planners, and optimizing agentic system in my spare time.",
 
+    "timeline.ai_startup.title": "AI Engineer at Legal-tech Startup",
+    "timeline.ai_startup.description":
+      "Working on agentic contract automation at Bind. Building AI-native applications that leverage LLMs and agents to streamline legal processes.",
     // Frontend category
     "skills.frontend": "Frontend",
     "skills.frontend.react.name": "React",
     "skills.frontend.react.description":
-      "I have been using React since 2019 and have used it in most of my frontend projects.",
+      "I have been using React since 2019 and have used it in most of my frontend projects, and currently at my work at Bind.",
     "skills.frontend.nextjs.name": "Next.js",
     "skills.frontend.nextjs.description":
       "Next.js is my go-to framework for server-side rendering and creating applications with great SEO.",
@@ -42,6 +45,17 @@ export const ui = {
     "skills.frontend.angular.name": "Angular",
     "skills.frontend.angular.description":
       "Angular is a great framework for building large-scale applications. I use it extensively at work, currently building a cloud-based storage solution for the construction industry.",
+
+    "skills.ai": "AI",
+    "skills.agent-systems.title": "Agent Systems",
+    "skills.prompt-optimization.title": "Prompt optimization",
+    "skills.rag.title": "Retrieval augmented generation",
+    "skills.agent-systems.description":
+      "Experience building real agentic systems using Inngest AgentKit, Vercel AI SDK, and custom MCP servers. I design multi-tool workflows, stateful agents, and planner–executor architectures that interact with real data and external systems.",
+    "skills.prompt-optimization.description":
+      "Skilled in optimizing LLM prompts using DSPy, GEPA, and structured evals. I build iterative pipelines that generate, mutate, and refine prompts using feedback signals to reach higher accuracy and more reliable model behavior.",
+    "skills.rag.description":
+      "Hands-on experience building RAG pipelines: embeddings, chunking, hybrid search, and reranking. I’ve built production-ready RAG systems for real data, including a travel-planner using a 10,000-item Chinese attractions dataset.",
 
     // Backend category
     "skills.backend": "Backend",
@@ -120,24 +134,35 @@ export const ui = {
   },
   cn: {
     "hero.hello": "你好",
-    "hero.name": "我是 ",
-    "hero.subtitle": "一名芬兰全栈工程师，热爱构建可扩展的系统。",
+    "hero.name": "嗨，我是",
+    "hero.subtitle": "AI 工程师 ＆ 构建者",
     "hero.contact": "联系我",
+
     "about.introduction":
-      "你好，我是来自芬兰的热情全栈软件工程师Sami Kuikka。我专注于构建解决现实挑战的可扩展、强大的系统。",
+      "你好，我是 Sami Kuikka —— 来自芬兰、热爱构建的开发者。目前在 Bind AI 初创公司创造 AI 原生应用。对 Web 开发、AI 智能体和云原生技术充满兴趣。",
     "about.about": "关于我",
-    "timeline.bachelor.title": "学士学位的开始",
+
+    "timeline.bachelor.title": "学士阶段的开始",
     "timeline.bachelor.description":
-      "开始攻读计算机科学学士学位，在有限的编码经验下奠定了基础知识。",
-    "timeline.master.title": "掌握Web技术",
+      "开始攻读计算机科学学士学位，以几乎没有编程基础为起点打下计算机专业的根基。",
+
+    "timeline.master.title": "Web 技术硕士（MSc）",
     "timeline.master.description":
-      "攻读Web技术、应用和科学硕士学位。对Web开发产生了浓厚的兴趣，特别喜欢使用React、Next.js、Astro和Node.js。",
-    "timeline.vertex.title": "Vertex Systems的软件工程师",
+      "在阿尔托大学（Aalto University）研究云原生系统、微服务和网络。奠定了坚实的系统设计和 Web 技术基础。",
+
+    "timeline.vertex.title": "Vertex 全栈工程师兼 Scrum Master",
     "timeline.vertex.description":
-      "加入Vertex Systems担任全职软件工程师，主要专注于Angular前端开发。完成了关于Kubernetes中服务网格和API网关的硕士论文，并熟练掌握了Kubernetes和Docker等云原生技术。",
-    "timeline.fullstack.title": "全栈开发人员和Scrum Master",
-    "timeline.fullstack.description":
-      "转型为全栈开发人员，熟练掌握Java、.NET和Python。承担Scrum Master职责，以增强团队协作和项目管理。",
+      "构建并扩展云原生 CAD 文档管理平台（Angular、微服务、Azure）。学习了如何交付生产级系统。",
+
+    "timeline.fullstack.title": "全栈开发者 ＆ Scrum Master",
+
+    "timeline.ai_side_projects.title": "LLM 与智能体实验",
+    "timeline.ai_side_projects.description":
+      "在空闲时间开始构建 AI 智能体、旅行规划器，并优化智能体系统。",
+
+    "timeline.ai_startup.title": "法律科技初创公司的 AI 工程师",
+    "timeline.ai_startup.description":
+      "在 Bind 从事智能体驱动的合同自动化工作。构建利用 LLM 和智能体优化法律流程的 AI 原生应用。",
 
     // Frontend category
     "skills.frontend": "前端",
@@ -223,5 +248,20 @@ export const ui = {
     "contact.email": "邮箱",
     "contact.message": "消息",
     "contact.send": "发送消息",
+
+    "skills.ai": "人工智能",
+
+    "skills.agent-systems.title": "智能体系统",
+    "skills.prompt-optimization.title": "提示词优化",
+    "skills.rag.title": "RAG 检索增强生成",
+
+    "skills.agent-systems.description":
+      "具备构建真实智能体系统的经验，包括使用 Inngest AgentKit、Vercel AI SDK 和自定义 MCP 服务器。我设计多工具协作流程、状态化智能体，以及可与真实数据和外部系统交互的规划器–执行器架构。",
+
+    "skills.prompt-optimization.description":
+      "熟练使用 DSPy、GEPA 及结构化评估方法优化 LLM 提示词。我构建迭代式优化流水线，通过生成、变异与反馈驱动的提示词更新，提升模型的准确率与稳定性。",
+
+    "skills.rag.description":
+      "具备构建 RAG 流水线的实践经验，包括向量嵌入、切分策略、混合检索和重排序。我曾为真实数据开发生产级 RAG 系统，例如使用包含一万条中国景点数据集的旅行规划器。",
   },
 } as const;

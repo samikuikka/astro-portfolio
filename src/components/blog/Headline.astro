@@ -7,15 +7,101 @@ const {
 
 <header class="mb-8 md:mb-16 text-center max-w-3xl mx-auto">
   <h1
-    class="text-4xl md:text-5xl font-bold leading-tighter tracking-tighter font-heading"
+    class="inline-block text-5xl p-1 bg-white text-black font-mono font-bold tracking-[0.15em] uppercase"
     set:html={title}
+    id="glitch-role"
   />
   {
     subtitle && (
       <div
-        class="mt-2 md:mt-3 mx-auto text-xl text-gray-500 dark:text-slate-400 font-medium"
+        class="mt-2 md:mt-3 mx-auto text-xl text-white font-medium"
         set:html={subtitle}
       />
     )
   }
 </header>
+
+<script is:inline>
+  const GLITCH_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-={}[]";
+
+  function attachPerLetterGlitch(
+    el,
+    {
+      glitchFraction = 0.45, // fraction of non-space characters that will ever glitch
+      framesPerCycle = 3, // how many random chars before going back to original
+      frameDelay = 300, // ms between each random char
+      minDelay = 4200, // min time between glitch cycles
+      maxDelay = 6200, // max time between glitch cycles
+    } = {}
+  ) {
+    if (!el) return;
+
+    const original = el.textContent;
+    const len = original.length;
+
+    // pick which indices can glitch (never spaces)
+    const candidateIndices = [];
+    for (let i = 0; i < len; i++) {
+      if (original[i] !== " ") candidateIndices.push(i);
+    }
+
+    const targetCount = Math.max(
+      1,
+      Math.floor(candidateIndices.length * glitchFraction)
+    );
+
+    // shuffle candidates
+    for (let i = candidateIndices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [candidateIndices[i], candidateIndices[j]] = [
+        candidateIndices[j],
+        candidateIndices[i],
+      ];
+    }
+
+    // fixed set of indices that will glitch
+    const glitchIndices = candidateIndices.slice(0, targetCount);
+
+    const runCycle = () => {
+      let frame = 0;
+
+      const step = () => {
+        if (frame >= framesPerCycle) {
+          // restore original and schedule next cycle
+          el.textContent = original;
+          const nextDelay = minDelay + Math.random() * (maxDelay - minDelay);
+          setTimeout(runCycle, nextDelay);
+          return;
+        }
+
+        const chars = original.split("");
+
+        // for this frame, each glitch index gets a random glitch char
+        glitchIndices.forEach((idx) => {
+          chars[idx] =
+            GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
+        });
+
+        el.textContent = chars.join("");
+        frame++;
+        setTimeout(step, frameDelay);
+      };
+
+      step();
+    };
+
+    // start first cycle after a random delay
+    const initialDelay = minDelay + Math.random() * (maxDelay - minDelay);
+    setTimeout(runCycle, initialDelay);
+  }
+
+  const roleEl = document.getElementById("glitch-role");
+
+  attachPerLetterGlitch(roleEl, {
+    glitchFraction: 0.6,
+    framesPerCycle: 4,
+    frameDelay: 100,
+    minDelay: 4000,
+    maxDelay: 5000,
+  });
+</script>

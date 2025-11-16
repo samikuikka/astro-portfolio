@@ -60,7 +60,7 @@ const SkillTree: React.FC<SkillTreeProps> = ({
   };
 
   return (
-    <div className="relative w-full max-w-4xl mx-auto">
+    <div className="relative  w-full max-w-4xl mx-auto">
       <svg viewBox={`0 0 ${svgSize} ${svgSize}`} className="w-full h-full">
         {/* Define the glow filter */}
         <defs>
@@ -104,7 +104,7 @@ const SkillTree: React.FC<SkillTreeProps> = ({
                   y1={centerY}
                   x2={categoryPos.x}
                   y2={categoryPos.y}
-                  stroke={category.color}
+                  stroke="rgba(255,255,255,0.7)"
                   strokeWidth="2"
                   initial={{ opacity: 0.2 }}
                   animate={{ opacity: isCategoryUnlocked ? 1 : 0.2 }}
@@ -129,7 +129,7 @@ const SkillTree: React.FC<SkillTreeProps> = ({
                       y1={categoryPos.y}
                       x2={skillPos.x}
                       y2={skillPos.y}
-                      stroke={category.color}
+                      stroke="rgba(255,255,255,0.7)"
                       strokeWidth="1"
                       initial={{ opacity: 0.2 }}
                       animate={{ opacity: isUnlocked ? 1 : 0.2 }}
@@ -217,7 +217,9 @@ const SkillTree: React.FC<SkillTreeProps> = ({
               y={centerY - mainHexSize / 2}
               width={mainHexSize * 1.7}
               height={mainHexSize * 1.7}
-              transform={`translate(-${mainHexSize * 0.4}, -${mainHexSize * 0.5})`}
+              transform={`translate(-${mainHexSize * 0.4}, -${
+                mainHexSize * 0.5
+              })`}
             >
               <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center">
                 <img

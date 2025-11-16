@@ -153,74 +153,78 @@ const ProjectSlide = ({
   onLeave: () => void;
 }) => (
   <div
-    className="flex-[0_0_90%] sm:flex-[0_0_60%] md:flex-[0_0_45%] lg:flex-[0_0_35%] min-w-0 pl-4 transition-transform duration-500 ease-out"
+    className="flex-[0_0_90%] overflow-hidden p-2 sm:flex-[0_0_60%] md:flex-[0_0_45%] lg:flex-[0_0_35%] min-w-0 pl-4"
     onMouseEnter={onHover}
     onMouseLeave={onLeave}
   >
     <div
       className={cn(
-        "relative h-[500px] rounded-2xl overflow-hidden shadow-2xl transition-all duration-500 ease-out",
-        "bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-800",
-        isHovered
-          ? "scale-[1.02] shadow-[0_20px_80px_-10px_rgba(255,255,255,0.1)]"
-          : ""
+        "relative h-[500px] rounded-2xl overflow-hidden shadow-2xl bg-black border border-gray-700"
       )}
     >
-      <div className="absolute inset-0 w-full h-1/2 overflow-hidden">
-        <div
-          className={cn(
-            "w-full h-full bg-cover bg-center transition-transform duration-700",
-            isHovered ? "scale-110" : ""
-          )}
-          style={{ backgroundImage: `url(${project.imageUrl})` }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-gray-900" />
-      </div>
-
-      <div className="absolute bottom-0 w-full p-8">
-        <div
-          className={cn(
-            "transition-all duration-500",
-            isHovered ? "transform -translate-y-4" : ""
-          )}
-        >
-          <div className="flex flex-wrap gap-2 mb-4">
-            {project.technologies.map((tech, index) => (
-              <span
-                key={index}
-                className="px-3 py-1 bg-gray-800/80 backdrop-blur-sm text-gray-300 text-xs font-medium rounded-full border border-gray-700"
-              >
-                {tech}
-              </span>
-            ))}
-          </div>
-
-          <h3 className="text-2xl font-bold mb-3 text-white">
-            {project.title}
-          </h3>
-          <p className="text-gray-300 mb-6 line-clamp-3">
-            {project.description}
-          </p>
-
-          <div className="flex gap-4">
-            {project.codeUrl && (
-              <a
-                href={project.codeUrl}
-                className="inline-flex items-center rounded-full border border-white/20 px-4 py-2 hover:bg-white hover:text-black transition-colors"
-              >
-                <Github className="mr-2 h-4 w-4" />
-                View Code
-              </a>
+      {/* 👉 Only this inner wrapper scales */}
+      <div
+        className={cn(
+          "absolute inset-0 transition-transform duration-500 ease-out",
+          isHovered ? "scale-[1.02]" : ""
+        )}
+      >
+        <div className="absolute inset-0 w-full h-1/2 overflow-hidden">
+          <div
+            className={cn(
+              "w-full h-full bg-cover bg-center transition-transform duration-700",
+              isHovered ? "scale-110" : ""
             )}
-            {project.liveDemoUrl && (
-              <a
-                href={project.liveDemoUrl}
-                className="inline-flex items-center rounded-full bg-white text-black px-4 py-2 hover:bg-gray-200 transition-colors"
-              >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Live Demo
-              </a>
+            style={{ backgroundImage: `url(${project.imageUrl})` }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-gray-900" />
+        </div>
+
+        <div className="absolute bottom-0 w-full p-8">
+          <div
+            className={cn(
+              "transition-all duration-500",
+              isHovered ? "transform -translate-y-4" : ""
             )}
+          >
+            <div className="flex flex-wrap gap-2 mb-4">
+              {project.technologies.map((tech, index) => (
+                <span
+                  key={index}
+                  className="px-3 py-1 bg-gray-800/80 backdrop-blur-sm text-gray-300 text-xs font-medium rounded-full border border-gray-700"
+                >
+                  {tech}
+                </span>
+              ))}
+            </div>
+
+            <h3 className="text-2xl font-bold mb-3 text-white">
+              {project.title}
+            </h3>
+            <p className="text-gray-300 mb-6 line-clamp-3">
+              {project.description}
+            </p>
+
+            <div className="flex gap-4">
+              {project.codeUrl && (
+                <a
+                  href={project.codeUrl}
+                  className="inline-flex items-center rounded-full border border-white/20 px-4 py-2 hover:bg-white hover:text-black transition-colors"
+                >
+                  <Github className="mr-2 h-4 w-4" />
+                  View Code
+                </a>
+              )}
+              {project.liveDemoUrl && (
+                <a
+                  href={project.liveDemoUrl}
+                  className="inline-flex items-center rounded-full bg-white text-black px-4 py-2 hover:bg-gray-200 transition-colors"
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Live Demo
+                </a>
+              )}
+            </div>
           </div>
         </div>
       </div>

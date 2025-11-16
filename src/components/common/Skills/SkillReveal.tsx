@@ -11,11 +11,6 @@ const SkillReveal = ({ lang }: { lang: Language }) => {
 
   const years = [
     {
-      title: t("timeline.bachelor.title"),
-      description: t("timeline.bachelor.description"),
-      year: 2015,
-    },
-    {
       title: t("timeline.master.title"),
       description: t("timeline.master.description"),
       year: 2019,
@@ -26,9 +21,14 @@ const SkillReveal = ({ lang }: { lang: Language }) => {
       year: 2021,
     },
     {
-      title: t("timeline.fullstack.title"),
-      description: t("timeline.fullstack.description"),
+      title: t("timeline.ai_side_projects.title"),
+      description: t("timeline.ai_side_projects.description"),
       year: 2023,
+    },
+    {
+      title: t("timeline.ai_startup.title"),
+      description: t("timeline.ai_startup.description"),
+      year: 2025,
     },
   ];
 
@@ -45,7 +45,7 @@ const SkillReveal = ({ lang }: { lang: Language }) => {
   }));
 
   return (
-    <div className="pt-20">
+    <div className="pt-20 border-t border-border">
       <StickyScroll content={content} />
     </div>
   );
