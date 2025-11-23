@@ -1,0 +1,82 @@
+---
+interface Props {
+  mode?: "user" | "agent";
+  label?: string;
+}
+
+const { mode = "agent", label }: Props = Astro.props;
+const isUser = mode === "user";
+const displayLabel = label ?? (isUser ? "You" : "LLM");
+const bubbleVariants = isUser
+  ? "bg-black text-white border-slate-800 shadow-lg shadow-black/20"
+  : "bg-white text-slate-900 border-slate-200 shadow-md shadow-slate-400/10";
+const bubbleAlignment = isUser ? "flex-row-reverse text-right" : "";
+const bubbleAccent = isUser
+  ? "bg-black text-white border-border"
+  : "bg-white text-black border-border";
+---
+
+<div class={`flex ${bubbleAlignment} items-start gap-3 not-prose`}>
+  <div class="flex flex-col items-center">
+    <div
+      class={`h-10 w-10 rounded-full border border-border ${bubbleAccent} flex items-center justify-center`}
+      aria-hidden="true"
+      data-mode={mode}
+    >
+      {
+        isUser ? (
+          <svg
+            viewBox="0 0 24 24"
+            class="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+          >
+            <path
+              d="M12 12c2.209 0 4-1.791 4-4s-1.791-4-4-4-4 1.791-4 4 1.791 4 4 4z"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M4 21.5c.5-4 3.5-6 8-6s7.5 2 8 6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        ) : (
+          <svg
+            viewBox="0 0 24 24"
+            class="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+          >
+            <path
+              d="M7 7h10a2 2 0 0 1 2 2v6l-3 3H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M9 7V4h6v3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M9 12h.01M12 12h.01M15 12h.01"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        )
+      }
+    </div>
+    <span class="mt-1 text-xs font-medium text-slate-500">{displayLabel}</span>
+  </div>
+
+  <div
+    class={`max-w-2xl rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-line ${bubbleVariants} border border-white`}
+    data-mode={mode}
+  >
+    <slot />
+  </div>
+</div>
