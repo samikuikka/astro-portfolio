@@ -76,7 +76,7 @@ But stabilization doesn't explain everything, we need more deeper ideas to reaso
 
 ## Explaining LLM Outputs as Trajectories
 
-When I say model stabilizes itself, what does that really mean? Sometimes LLMs are very confident taht their wrong answer is right, sometimes long answers drift to nonsense or sometimes models "lock in" to bad reasoning, never being bale to recover back to correct "path".
+When I say model stabilizes itself, what does that really mean? Sometimes LLMs are very confident that their wrong answer is right, sometimes long answers drift to nonsense or sometimes models "lock in" to bad reasoning, never being able to recover back to correct "path".
 
 So it is beneficial to create mental models on what happens internally when model generates tokens.
 
@@ -98,13 +98,13 @@ Once the model find one of these regions, it tends to stay there.
 
 Here I have simplification of trajectories and basins.
 
-And here comes the important part: prompting strategeis such as Chain-of-Thought helps the model not because it makes it smarter, but rather it breaks the problem into smaller subproblems that are easier to solve and drifts the answer closer to the bassin!
+And here comes the important part: prompting strategies such as Chain-of-Thought helps the model not because it makes it smarter, but rather it breaks the problem into smaller subproblems that are easier to solve and drifts the answer closer to the basin!
 
 When model the model writes these intermediate steps, each intermediate token constrains the distribution of future tokens, reducing drift.
 
 But here's also a catch!
 Stablizing the trajectory (finding the trajectory model thinks works) doesn't mean that it is the correct one!
-However, as the trajectory stabilizes, the model becoes more confident on its' answer, which can then be seen models as confident on their own wrong answers!
+However, as the trajectory stabilizes, the model becomes more confident on its' answer, which can then be seen models as confident on their own wrong answers!
 
 So how do we make sure we don't stabilize the wrong trajectories that gives us the wrong answer?
 Well, one approach that can be used to create multiple trajectories and take only the best. This is the basic idea of Tree-of-Thoughts:
@@ -118,8 +118,8 @@ wrong answer!
 So the idea to fix this is just to give model multiple different trajectories that it can explore!
 Even if some of the trajectories are going to shift from the correct answer, with this approach we are more likely to get to the correct answer at least in one trajectory.
 
-What prompting techniques such as Chai-of-Though do is to try to make it easier for trajectory to notdrift to wron directions, the Tree-of-Thought allows to try also other trajectories.
-This avoid the biggest weakness of CoT, committing too early to wrong trajecctory and stabilizing it.
+What prompting techniques such as Chain-of-Though do is to try to make it easier for trajectory to not drift to wrong directions, the Tree-of-Thought allows to try also other trajectories.
+This avoid the biggest weakness of CoT, committing too early to wrong trajectory and stabilizing it.
 
 <Image src={multiTrajectories} alt="Multiple trajectories" />
 
@@ -147,7 +147,7 @@ The paper frames the problem of finding the optimal solution to four different q
 #### Structure of the Thought
 
 The first step for solving the problem, is to think what is the structure of our thoughts.
-Thought should be some intermedaite step in the process of solving the problem, and should contain all the necessary information
+Thought should be some intermediate step in the process of solving the problem, and should contain all the necessary information
 to keep solving the problem from the thought.
 
 I'll use as example the Game of 24, which is simple game where given 5 numbers, you are asked how to obtain 24 from the numbers.
@@ -172,7 +172,7 @@ From each of these thoughts, we can try generate new thought by taking again two
 
 #### From Thought to State
 
-Last example also shows how did we create the thought from a state, for the game of 24, it is justtaking two numbers and generating new number from those.
+Last example also shows how did we create the thought from a state, for the game of 24, it is just taking two numbers and generating new number from those.
 
 But the problems we want to solve with ToT doesnt need to be this simple. The important thing is that each thought is progress on solving the problem, and we can easily go from thought to state.
 For example, creating itinerary for the trip, state could be the full itinerary, and thought could be single day in the trip. So the problem becomes generating multiple thoughts of single day, and adding those to itinerary attempts.
@@ -189,7 +189,7 @@ E.g. in creative writing, we can't possibly write all the possible states, so we
 Proposing is about giving the list of possible states that we can go next.
 For example in the game of 24, we actually have limited amount of ways we can calculate two numbers ( +, -, /, x), so we have limited set of states.
 
-Here's also code from the implmentation, simple to understand, `get_samples` and `get_proposals` are just LLM calls to etiher get samples or list of proposals.
+Here's also code from the implmentation, simple to understand, `get_samples` and `get_proposals` are just LLM calls to either get samples or list of proposals.
 
 ```python
 # generation
@@ -233,7 +233,7 @@ breadth-first search (BFS) and depth-first search (DFS). So basically, do we go 
 
 ### But at what cost?
 
-So we have the basic understadnign of the implementation of the tree-of-thought, and how early tokens affect the output.
+So we have the basic understanding of the implementation of the tree-of-thought, and how early tokens affect the output.
 What ToT does is that it gives us many different trajectories we can explore on, by giving the tracjectories in terms of new "thoughts".
 
 As every thought is different from the other thoughts, we have different ways to approach the problem we are solving for.
