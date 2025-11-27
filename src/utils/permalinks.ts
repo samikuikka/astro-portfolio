@@ -8,8 +8,17 @@ export const trimSlash = (s: string) => trim(trim(s, "/"));
 
 export const cleanSlug = (text = "") =>
   trimSlash(text)
+    .replace(/\\/g, "/")
     .split("/")
-    .map((slug) => slugify(slug))
+    .filter((part) => !!part)
+    .map((part, idx, arr) => {
+      const withoutExt = part.replace(/\.mdx?$/i, "");
+      if (idx === arr.length - 1 && withoutExt.toLowerCase() === "index") {
+        return "";
+      }
+      return slugify(withoutExt);
+    })
+    .filter((part) => !!part)
     .join("/");
 
 const BASE_PATHNAME = "/";

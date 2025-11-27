@@ -116,7 +116,7 @@ const getNormalizedPost = async (
     draft = false,
   } = data;
 
-  const slug = cleanSlug(id);
+  const slug = cleanSlug(post.slug || id);
   const publishDate = new Date(rawPublishDate);
   const updateDate = rawUpdateDate ? new Date(rawUpdateDate) : undefined;
 
