@@ -10,7 +10,7 @@ const displayLabel = label ?? (isUser ? "You" : "LLM");
 const bubbleVariants = isUser
   ? "bg-black text-white border-slate-800 shadow-lg shadow-black/20"
   : "bg-white text-slate-900 border-slate-200 shadow-md shadow-slate-400/10";
-const bubbleAlignment = isUser ? "flex-row-reverse text-right" : "";
+const bubbleAlignment = isUser ? "flex-row-reverse" : "";
 const bubbleAccent = isUser
   ? "bg-black text-white border-border"
   : "bg-white text-black border-border";
@@ -74,7 +74,7 @@ const bubbleAccent = isUser
   </div>
 
   <div
-    class={`max-w-2xl rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-line ${bubbleVariants} border border-white`}
+    class={`max-w-2xl rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-line text-left ${bubbleVariants} border border-white`}
     data-mode={mode}
   >
     <slot />
