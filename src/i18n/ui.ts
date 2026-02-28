@@ -12,8 +12,8 @@ export const ui = {
     "hero.subtitle": "AI ENGINEER & BUILDER",
     "hero.contact": "Contact me",
     "about.introduction":
-      "Hello, I'm Sami Kuikka—a passionate builder from Finland. Creating AI-native applications at the Bind AI startup. Interested in web development, AI Agents, and cloud-native technologies.",
-    "about.about": "About me",
+      "I build AI-native applications at Bind, working on agentic contract automation systems. My day-to-day involves agent harnesses and end-to-end AI application development. In my spare time, I dive deeper into RAG systems, memory architectures, and multi-agent workflows.",
+    "about.about": "What I'm Building",
     "timeline.bachelor.title": "Bachelor's Beginnings",
     "timeline.bachelor.description":
       "Started on a Bachelor's degree in Computer Science, laying the foundational knowledge with limited prior coding experience.",
@@ -139,8 +139,8 @@ export const ui = {
     "hero.contact": "联系我",
 
     "about.introduction":
-      "你好，我是 Sami Kuikka —— 来自芬兰、热爱构建的开发者。目前在 Bind AI 初创公司创造 AI 原生应用。对 Web 开发、AI 智能体和云原生技术充满兴趣。",
-    "about.about": "关于我",
+      "我在 Bind 构建 AI 原生应用，专注于智能体合同自动化系统。日常工作包括智能体工具框架和端到端 AI 应用开发。业余时间我会深入研究 RAG 系统、记忆架构和多智能体工作流。",
+    "about.about": "我在构建什么",
 
     "timeline.bachelor.title": "学士阶段的开始",
     "timeline.bachelor.description":

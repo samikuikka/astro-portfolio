@@ -19,7 +19,7 @@ const latestPostUrl = latestPostPermalink
 ---
 
 <section
-  class="relative flex flex-col-reverse lg:flex-col items-center justify-between px-4 md:px-4 lg:px-10"
+  class="relative flex flex-col-reverse lg:flex-col items-center px-4 md:px-4 lg:px-10 py-12"
 >
   <div class="hidden md:block">
     <Spotlight client:only="react" />
@@ -27,7 +27,7 @@ const latestPostUrl = latestPostPermalink
 
   <!-- Left Section: Text Content -->
   <div
-    class="w-full flex flex-col items-center py-10 relative z-10 space-y-2 md:space-y-6"
+    class="w-full flex flex-col items-center pt-8 pb-4 relative z-10 space-y-2 md:space-y-6"
   >
     {
       latestPost && latestPostUrl ? (
@@ -98,7 +98,7 @@ const latestPostUrl = latestPostPermalink
     </div>
   </div>
 
-  <div class="hidden md:flex w-full justify-center py-10 z-10 relative">
+  <div class="hidden md:flex w-full justify-center py-8 z-10 relative">
     <div
       class="relative w-full max-w-4xl font-mono text-[10px] md:text-[11px] text-slate-200"
     >
