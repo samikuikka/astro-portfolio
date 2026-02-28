@@ -11,6 +11,8 @@ import icon from "astro-icon";
 
 import mdx from "@astrojs/mdx";
 
+import rehypeSlug from "rehype-slug";
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // https://astro.build/config
@@ -45,7 +47,9 @@ export default defineConfig({
         'database',
       ],
     },
-  }), mdx()],
+  }), mdx({
+    rehypePlugins: [rehypeSlug],
+  })],
   vite: {
     resolve: {
       alias: {
