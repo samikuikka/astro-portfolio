@@ -24,7 +24,7 @@ The hard part wasn't getting agents to write code. It was building a system wher
 
 The testbed was a web-based DOCX editor. Parsing Office Open XML, resolving style chains, laying out text with proper font metrics, rendering to canvas. The OOXML spec alone is over 6,000 pages.
 
-The result after a week: a working DOCX viewer that renders close to LibreOffice on most documents, with basic editing support. But the DOCX editor was never really the point. The point was the harness around it.
+The result after a week: a working DOCX viewer that matches LibreOffice quite well on the demo.docx I was testing against (a complex document with tables, lists, images, text formatting, drop caps, and more). Basic editing also works in normal documents. But the DOCX editor was never really the point. The point was the harness around it.
 
 ## The Problem: Who Watches the Watcher?
 
@@ -174,7 +174,7 @@ This progression is the core of the harness:
 3. **Agents with eyes**: can take screenshots and analyze them
 4. **Agents with a ground truth**: can compare their output pixel-by-pixel against a known-correct reference
 
-Each step reduced how much I needed to be involved. By the end, most specs ran through the full implement-visual-QA-cleanup cycle without me looking at a single line of code.
+Each step reduced how much I needed to be involved. But it's not like the agent could fully replace my judgment. It was good at catching obvious problems and finding issues that could then be turned into new specs. But things like table gridlines not showing, or subtle spacing being off, still needed me to look at the output and steer the agent. The visual QA got me maybe 70% of the way there on its own. The remaining 30% still required human eyes.
 
 ## What Surprised Me
 
