@@ -1,19 +1,13 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import Hero from "~/components/widgets/Hero.astro";
-import SkillReveal from "~/components/common/Skills/SkillReveal";
-import Contact from "~/components/widgets/Contact.astro";
-import { PinnedIntroduction } from "~/components/common/PinnedIntroduction";
 import LatestWriting from "~/components/widgets/LatestWriting.astro";
-import { getLangFromUrl } from "~/i18n/utils";
 import Header from "~/components/widgets/Header.astro";
-
-const lang = getLangFromUrl(Astro.url);
+import { headerData } from "~/navigation";
 
 export async function getStaticPaths() {
   return [{ params: { locale: "en" } }, { params: { locale: "cn" } }];
 }
-import { headerData } from "~/navigation";
 ---
 
 <Layout>
@@ -25,9 +19,6 @@ import { headerData } from "~/navigation";
     <div class="max-w-5xl mt-10 border border-gray-700">
       <Hero />
       <LatestWriting />
-      <PinnedIntroduction client:only="react" lang={lang} />
-      <SkillReveal client:only="react" lang={lang} />
-      <Contact />
     </div>
   </div>
 </Layout>
