@@ -17,6 +17,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // https://astro.build/config
 export default defineConfig({
+  site: "https://samikuikka.com",
   env: {
     schema: {
       PUBLIC_SITE_URL: envField.string({
