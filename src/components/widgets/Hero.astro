@@ -116,12 +116,12 @@ const latestPostUrl = latestPostPermalink
               </p>
 
               <p class="text-[0.6rem] text-slate-500">
-                user_profile:
-                <span class="text-slate-300">explorer · budget mid</span>
+                eval_set:
+                <span class="text-slate-300" id="hacker-evalset">refund_qa · 240 examples</span>
               </p>
               <p class="text-[0.6rem] text-slate-500">
-                constraints:
-                <span class="text-slate-300">max_travel = 40km/day</span>
+                metric:
+                <span class="text-slate-300">rubric · pass-rate</span>
               </p>
             </div>
           </div>
@@ -172,7 +172,7 @@ const latestPostUrl = latestPostPermalink
               <span
                 class="inline-flex h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse"
               ></span>
-              RUNNING TOOLS...
+              OPTIMIZING PROMPT...
             </p>
 
             <pre
@@ -218,7 +218,7 @@ const latestPostUrl = latestPostPermalink
             class="px-2 py-1 border-t border-slate-700/70 text-[0.55rem] text-slate-500 flex items-center justify-between"
           >
             <span>CPU: 4 · TOOLS: 5</span>
-            <span>MODE: multi-agent</span>
+            <span>MODE: apo-loop</span>
           </div>
         </div>
 
@@ -258,21 +258,21 @@ const latestPostUrl = latestPostPermalink
               class="flex items-center justify-between px-2 py-1 border-b border-slate-700/70 text-[0.6rem] tracking-[0.18em] uppercase text-slate-400"
             >
               <span>OUTPUT</span>
-              <span class="text-[0.55rem] text-slate-500">PLAN: V1</span>
+              <span class="text-[0.55rem] text-slate-500">EVAL</span>
             </div>
             <div
               class="px-2 py-2 w-[190px] h-[100px] overflow-hidden space-y-1 leading-snug text-[0.6rem] flex flex-col justify-between"
             >
               <p class="text-emerald-300">
-                <span class="text-white">Day 1 - </span><span
+                <span class="text-white">v3 - </span><span
                   id="hacker-output-1"></span>
               </p>
               <p class="text-emerald-300">
-                <span class="text-white">Day 2 - </span><span
+                <span class="text-white">v5 - </span><span
                   id="hacker-output-2"></span>
               </p>
               <p class="text-emerald-300">
-                <span class="text-white">Day 3 - </span><span
+                <span class="text-white">v7 - </span><span
                   id="hacker-output-3"></span>
               </p>
             </div>
@@ -301,42 +301,31 @@ const latestPostUrl = latestPostPermalink
 <script is:inline>
   const scenarios = [
     {
-      input: '"Plan 3 days in Beijing"',
-      output: [
-        "Forbidden City, Jingshan, Hutongs",
-        "Great Wall (Mutianyu) & local food",
-        "Temple of Heaven & parks",
-      ],
+      input: '"Resolve refunds per policy.md"',
+      evalSet: "refund_qa · 240 examples",
+      output: ["148/240 · +9%", "186/240 · +18%", "212/240 · +29%"],
     },
     {
-      input: '"Weekend in Shanghai"',
-      output: [
-        "The Bund, Yu Garden, Old Town",
-        "Lujiazui skyline & museums",
-        "French Concession & cafes",
-      ],
+      input: '"Route tickets to the right team"',
+      evalSet: "triage · 500 examples",
+      output: ["312/500 · +6%", "401/500 · +14%", "455/500 · +22%"],
     },
     {
-      input: '"Find hidden gems in Xi\'an"',
-      output: [
-        "City Walls & Muslim Quarter",
-        "Terracotta Army & local food",
-        "Pagodas & parks",
-      ],
+      input: '"Review PRs for security bugs"',
+      evalSet: "pr_review · 180 examples",
+      output: ["98/180 · +4%", "134/180 · +16%", "158/180 · +27%"],
     },
     {
-      input: '"Create tour in Chengdu"',
-      output: [
-        "People’s Park & old streets",
-        "Giant Panda base & hotpot",
-        "Temples & tea houses",
-      ],
+      input: '"Book flights within budget"',
+      evalSet: "flight_agent · 120 traces",
+      output: ["61/120 · +8%", "89/120 · +19%", "108/120 · +31%"],
     },
   ];
 
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-={}[]";
 
   const inputEl = document.getElementById("hacker-input");
+  const evalSetEl = document.getElementById("hacker-evalset");
   const outputEls = [
     document.getElementById("hacker-output-1"),
     document.getElementById("hacker-output-2"),
@@ -386,6 +375,8 @@ const latestPostUrl = latestPostPermalink
       isAnimating = true;
       const scenario = scenarios[currentScenario];
 
+      if (evalSetEl) evalSetEl.textContent = scenario.evalSet;
+
       // animate input + all 3 output lines in parallel
       await Promise.all([
         animateText(inputEl, scenario.input, 48),
@@ -421,14 +412,14 @@ const latestPostUrl = latestPostPermalink
     );
 
     const logMessages = [
-      "findAttractions() → 124 candidates",
-      "clusterByLocation() → 7 clusters",
-      "rankByValue() → scoring top days",
-      "generateItinerary() → draft v1",
-      "scoreItineraryEM() → +10% vs baseline",
-      "cacheResult() → key=beijing_3d_mid",
-      "refinePlan() → compressed travel distance",
-      "exportPlan() → .json .md .ics",
+      "runBaseline() → 148/240 pass",
+      "collectFailures() → 92 traces",
+      "proposeCandidates() → 16 variants",
+      "gradeRubric() → scoring outputs",
+      "selectElite() → top 4 kept",
+      "metaPrompt() → mined 3 instructions",
+      "reevalCandidates() → 212/240 pass",
+      "regressionCheck() → clean",
     ];
 
     let startIndex = 0;
