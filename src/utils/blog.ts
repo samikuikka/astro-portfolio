@@ -103,7 +103,7 @@ const getNormalizedPost = async (
   post: CollectionEntry<"post">
 ): Promise<Post> => {
   const { id, data } = post;
-  const { Content, remarkPluginFrontmatter } = await render(post);
+  const { Content, headings, remarkPluginFrontmatter } = await render(post);
 
   const {
     publishDate: rawPublishDate = new Date(),
@@ -143,6 +143,7 @@ const getNormalizedPost = async (
     author: author,
     draft: draft,
     Content: Content,
+    headings: headings,
     readingTime: remarkPluginFrontmatter?.readingTime,
   };
 };

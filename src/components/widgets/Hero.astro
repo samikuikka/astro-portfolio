@@ -1,5 +1,5 @@
 ---
-import { Spotlight } from "../ui/spotlight-new";
+import Spotlight from "../ui/Spotlight.astro";
 import { getLangFromUrl, useTranslations } from "~/i18n/utils";
 import { fetchPosts } from "~/utils/blog";
 import { getPermalink } from "~/utils/permalinks";
@@ -22,7 +22,7 @@ const latestPostUrl = latestPostPermalink
   class="relative flex flex-col-reverse lg:flex-col items-center px-4 md:px-4 lg:px-10 py-12"
 >
   <div class="hidden md:block">
-    <Spotlight client:only="react" />
+    <Spotlight />
   </div>
 
   <!-- Left Section: Text Content -->

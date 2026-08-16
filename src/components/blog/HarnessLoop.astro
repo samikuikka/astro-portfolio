@@ -1,0 +1,552 @@
+---
+/**
+ * HarnessLoop — the human-in-the-loop for harness engineering.
+ *
+ * Mirrors apo's EndToEndLoopDemo geometry: an input card feeds the ring, a
+ * token makes two laps (attempt 1 fails at PASS/FAIL, flows through Modify,
+ * attempt 2 passes and exits to DONE). Always rendered as a dark panel so the
+ * track, borders, and token stay high-contrast in both site themes. The token
+ * travels behind opaque node cards, so it never sits on top of them.
+ */
+---
+
+<figure class="hl not-prose" data-harness-loop>
+	<figcaption class="hl__sr-only">
+		The harness loop. Feed the harness and task, run the agent, inspect its
+		traces, judge PASS or FAIL. On FAIL, modify the harness and run again. On
+		PASS, the task is DONE.
+	</figcaption>
+
+	<div class="hl__flow">
+		<div class="hl__card hl__card--input">
+			<span>Input</span>
+			<strong>Harness + task</strong>
+			<small>What you hand the agent</small>
+		</div>
+
+		<span class="hl__arrow">→</span>
+
+		<div class="hl__ring" data-ring>
+			<svg class="hl__track" viewBox="0 0 272 272" focusable="false" aria-hidden="true">
+				<circle cx="136" cy="136" r="100"></circle>
+			</svg>
+
+			<span class="hl__token" data-token></span>
+
+			<div class="hl__node hl__node--run" data-node="run">
+				<span>Run the agent</span>
+			</div>
+			<div class="hl__node hl__node--inspect" data-node="inspect">
+				<span>Inspect output</span>
+				<small>traces</small>
+			</div>
+			<div class="hl__node hl__node--verdict" data-node="verdict" data-state="pending">
+				<span data-verdict>PASS / FAIL</span>
+			</div>
+			<div class="hl__node hl__node--modify" data-node="modify">
+				<span>Modify</span>
+				<small>feedback</small>
+			</div>
+
+			<div class="hl__center">
+				<span class="hl__brand">the loop</span>
+				<strong data-run-label>attempt 1</strong>
+			</div>
+		</div>
+
+		<span class="hl__arrow hl__arrow--out" data-out-arrow>→</span>
+
+		<div class="hl__card hl__card--out" data-out>
+			<span>Output</span>
+			<strong>DONE</strong>
+			<small>Agent passed judgement</small>
+		</div>
+	</div>
+</figure>
+
+<style>
+	.hl {
+		margin: 2rem auto;
+		max-width: 34rem;
+		padding: 1.25rem 1rem;
+		border: 1px solid #232838;
+		border-radius: 0.5rem;
+		background: #0b0e16;
+		color: #e6e9f2;
+		font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", monospace;
+		overflow: hidden;
+	}
+
+	.hl__sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	.hl__flow {
+		display: grid;
+		grid-template-columns: minmax(6.5rem, 1fr) 1.25rem 17rem 1.25rem minmax(6.5rem, 1fr);
+		align-items: center;
+	}
+
+	.hl__card {
+		padding: 0.6rem 0.7rem;
+		border: 1px solid #232838;
+		border-radius: 0.4rem;
+		background: #11151f;
+		transition: border-color 300ms ease, opacity 300ms ease;
+	}
+
+	.hl__card span,
+	.hl__card strong,
+	.hl__card small {
+		display: block;
+	}
+
+	.hl__card span {
+		margin-bottom: 0.3rem;
+		color: #8f9ab2;
+		font-size: 0.6rem;
+		font-weight: 600;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.hl__card strong {
+		color: #f3f5fb;
+		font-family: var(--aw-font-sans, ui-sans-serif, system-ui, sans-serif);
+		font-size: 0.8rem;
+		font-weight: 600;
+		line-height: 1.3;
+	}
+
+	.hl__card small {
+		margin-top: 0.25rem;
+		color: #8b93a7;
+		font-size: 0.62rem;
+		line-height: 1.4;
+	}
+
+	/* Dimmed "not yet reached" state via muted colors (not opacity) so text
+	   keeps a passing contrast ratio until the token completes its lap. */
+	.hl__card--out {
+		border-color: #1d2230;
+	}
+
+	.hl__card--out strong {
+		color: #a6afc5;
+	}
+
+	.hl__arrow--out {
+		color: #767f96;
+	}
+
+	.hl__card--out[data-visible] {
+		border-color: #34d399;
+	}
+
+	.hl__card--out[data-visible] strong {
+		color: #34d399;
+	}
+
+	.hl__arrow--out[data-visible] {
+		color: #34d399;
+	}
+
+	.hl__arrow {
+		color: #767f96;
+		font-size: 0.85rem;
+		text-align: center;
+		transition: color 300ms ease;
+	}
+
+	.hl__ring {
+		position: relative;
+		width: 17rem;
+		height: 17rem;
+		margin: 0 auto;
+	}
+
+	.hl__track {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		overflow: visible;
+	}
+
+	.hl__track circle {
+		fill: none;
+		stroke: #3a4154;
+		stroke-width: 1.5;
+		stroke-dasharray: 3 5;
+	}
+
+	.hl__token {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 0.6rem;
+		height: 0.6rem;
+		border: 2px solid #0b0e16;
+		border-radius: 999px;
+		background: #ffffff;
+		offset-path: path("M 36 136 A 100 100 0 0 1 236 136 A 100 100 0 0 1 36 136");
+		offset-distance: 0%;
+		offset-anchor: center;
+		z-index: 1;
+		box-shadow: 0 0 8px rgba(255, 255, 255, 0.45);
+	}
+
+	.hl__node {
+		position: absolute;
+		z-index: 2;
+		min-width: 4.75rem;
+		padding: 0.32rem 0.45rem;
+		border: 1px solid #2a3142;
+		border-radius: 0.35rem;
+		background: #0b0e16;
+		color: #8b93a7;
+		font-size: 0.64rem;
+		font-weight: 600;
+		line-height: 1.25;
+		text-align: center;
+		transition:
+			border-color 220ms ease,
+			color 220ms ease,
+			background-color 220ms ease;
+	}
+
+	.hl__node small {
+		display: block;
+		margin-top: 0.1rem;
+		color: #8f9ab2;
+		font-size: 0.52rem;
+		font-weight: 500;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+	}
+
+	.hl__node[data-active] {
+		border-color: #c7ccd9;
+		background: #181c28;
+		color: #ffffff;
+	}
+
+	.hl__node[data-active] small {
+		color: #c7ccd9;
+	}
+
+	.hl__node--run {
+		top: 50%;
+		left: 2.25rem;
+		transform: translate(-50%, -50%);
+	}
+
+	.hl__node--inspect {
+		top: 2.25rem;
+		left: 50%;
+		transform: translate(-50%, -50%);
+	}
+
+	.hl__node--verdict {
+		top: 50%;
+		right: 2.25rem;
+		transform: translate(50%, -50%);
+	}
+
+	.hl__node--modify {
+		bottom: 2.25rem;
+		left: 50%;
+		transform: translate(-50%, 50%);
+	}
+
+	.hl__node--verdict[data-state="fail"] {
+		border-color: #f0856b;
+		background: #1a0f0c;
+		color: #f5a088;
+	}
+
+	.hl__node--verdict[data-state="fail"] small {
+		color: #f0856b;
+	}
+
+	.hl__node--verdict[data-state="pass"] {
+		border-color: #34d399;
+		background: #0c1a14;
+		color: #5fe6ad;
+	}
+
+	.hl__node--verdict[data-state="pass"] small {
+		color: #34d399;
+	}
+
+	.hl__center {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 8rem;
+		transform: translate(-50%, -50%);
+		text-align: center;
+	}
+
+	.hl__center > span,
+	.hl__center > strong {
+		display: block;
+	}
+
+	.hl__brand {
+		margin-bottom: 0.3rem;
+		color: #6b7488;
+		font-size: 0.6rem;
+		font-weight: 600;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+	}
+
+	.hl__center strong {
+		color: #f3f5fb;
+		font-family: var(--aw-font-sans, ui-sans-serif, system-ui, sans-serif);
+		font-size: 0.82rem;
+		font-weight: 600;
+	}
+
+	@media (max-width: 34rem) {
+		.hl__flow {
+			grid-template-columns: 1fr;
+			justify-items: center;
+			gap: 0.6rem;
+		}
+
+		.hl__card {
+			width: min(100%, 17rem);
+		}
+
+		.hl__arrow {
+			transform: rotate(90deg);
+		}
+	}
+
+	@media (max-width: 22rem) {
+		.hl {
+			padding-inline: 0.5rem;
+		}
+
+		.hl__ring {
+			transform: scale(0.9);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.hl__node,
+		.hl__card,
+		.hl__arrow {
+			transition: none;
+		}
+	}
+</style>
+
+<script>
+	type NodeName = "run" | "inspect" | "verdict" | "modify";
+	type VerdictState = "pending" | "fail" | "pass";
+
+	const MOVE_MS = 650;
+	const DWELL_MS = 800;
+	const LAP_MS = 4 * (MOVE_MS + DWELL_MS);
+	const VERDICT_REACH_MS = 2 * (MOVE_MS + DWELL_MS);
+	const HOLD_PASS_MS = 2_200;
+	const CYCLE_MS = LAP_MS + VERDICT_REACH_MS + HOLD_PASS_MS;
+
+	function buildLapKeyframes(
+		waypoints: Array<{ t: number; dist: string }>,
+		total: number,
+	) {
+		return waypoints.map(({ t, dist }) => ({
+			offset: total === 0 ? 0 : t / total,
+			offsetDistance: dist,
+		}));
+	}
+
+	function prefersReducedMotion(): boolean {
+		return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+	}
+
+	function onVisible(
+		element: HTMLElement,
+		onTransition: (visible: boolean) => void,
+		threshold = 0.35,
+	): () => void {
+		if (!("IntersectionObserver" in window)) {
+			onTransition(true);
+			return () => {};
+		}
+		const observer = new IntersectionObserver(
+			(entries) => {
+				for (const entry of entries) {
+					onTransition(entry.isIntersecting);
+				}
+			},
+			{ threshold },
+		);
+		observer.observe(element);
+		return () => observer.disconnect();
+	}
+
+	function setupHarnessLoop(root: HTMLElement) {
+		const nodes = new Map<NodeName, HTMLElement>();
+		for (const node of root.querySelectorAll<HTMLElement>("[data-node]")) {
+			nodes.set(node.dataset.node as NodeName, node);
+		}
+
+		const token = root.querySelector<HTMLElement>("[data-token]");
+		const verdictLabel = root.querySelector<HTMLElement>("[data-verdict]");
+		const runLabel = root.querySelector<HTMLElement>("[data-run-label]");
+		const out = root.querySelector<HTMLElement>("[data-out]");
+		const outArrow = root.querySelector<HTMLElement>("[data-out-arrow]");
+		let tokenAnimation: Animation | undefined;
+		let timers: number[] = [];
+		let generation = 0;
+
+		function setActive(name?: NodeName) {
+			for (const [nodeName, element] of nodes) {
+				element.toggleAttribute("data-active", nodeName === name);
+			}
+		}
+
+		function setVerdict(state: VerdictState) {
+			const verdictNode = nodes.get("verdict");
+			if (verdictNode) verdictNode.dataset.state = state;
+			if (!verdictLabel) return;
+			verdictLabel.textContent =
+				state === "fail" ? "FAIL" : state === "pass" ? "PASS" : "PASS / FAIL";
+		}
+
+		function setCenter(label: string) {
+			if (runLabel) runLabel.textContent = label;
+		}
+
+		function showOut(visible: boolean) {
+			out?.toggleAttribute("data-visible", visible);
+			outArrow?.toggleAttribute("data-visible", visible);
+		}
+
+		function clearCycle() {
+			generation += 1;
+			for (const timer of timers) window.clearTimeout(timer);
+			timers = [];
+			tokenAnimation?.cancel();
+			tokenAnimation = undefined;
+		}
+
+		function schedule(gen: number, delay: number, action: () => void) {
+			const timer = window.setTimeout(() => {
+				if (gen === generation) action();
+			}, delay);
+			timers.push(timer);
+		}
+
+		function animateToken(
+			waypoints: Array<{ t: number; dist: string }>,
+			total: number,
+		) {
+			if (!token) return;
+			tokenAnimation = token.animate(buildLapKeyframes(waypoints, total), {
+				duration: total,
+				easing: "linear",
+				fill: "forwards",
+			});
+		}
+
+		function showStaticFrame() {
+			setActive();
+			setVerdict("pass");
+			setCenter("passed");
+			showOut(true);
+		}
+
+		function playCycle() {
+			clearCycle();
+			const gen = generation;
+			setActive("run");
+			setVerdict("pending");
+			setCenter("attempt 1");
+			showOut(false);
+
+			animateToken(
+				[
+					{ t: 0, dist: "0%" },
+					{ t: DWELL_MS, dist: "0%" },
+					{ t: DWELL_MS + MOVE_MS, dist: "25%" },
+					{ t: 2 * DWELL_MS + MOVE_MS, dist: "25%" },
+					{ t: 2 * (DWELL_MS + MOVE_MS), dist: "50%" },
+					{ t: 3 * DWELL_MS + 2 * MOVE_MS, dist: "50%" },
+					{ t: 3 * (DWELL_MS + MOVE_MS), dist: "75%" },
+					{ t: 4 * DWELL_MS + 3 * MOVE_MS, dist: "75%" },
+					{ t: LAP_MS, dist: "100%" },
+				],
+				LAP_MS,
+			);
+
+			schedule(gen, DWELL_MS + MOVE_MS, () => setActive("inspect"));
+			schedule(gen, 2 * (DWELL_MS + MOVE_MS), () => {
+				setActive("verdict");
+				setVerdict("fail");
+			});
+			schedule(gen, 3 * (DWELL_MS + MOVE_MS), () => setActive("modify"));
+			schedule(gen, LAP_MS, () => {
+				setActive("run");
+				setVerdict("pending");
+				setCenter("attempt 2");
+				animateToken(
+					[
+						{ t: 0, dist: "0%" },
+						{ t: DWELL_MS, dist: "0%" },
+						{ t: DWELL_MS + MOVE_MS, dist: "25%" },
+						{ t: 2 * DWELL_MS + MOVE_MS, dist: "25%" },
+						{ t: VERDICT_REACH_MS, dist: "50%" },
+					],
+					VERDICT_REACH_MS,
+				);
+			});
+			schedule(gen, LAP_MS + (DWELL_MS + MOVE_MS), () => setActive("inspect"));
+			schedule(gen, LAP_MS + VERDICT_REACH_MS, () => {
+				setActive("verdict");
+				setVerdict("pass");
+				showOut(true);
+			});
+			schedule(gen, CYCLE_MS, playCycle);
+		}
+
+		if (prefersReducedMotion()) {
+			showStaticFrame();
+			return;
+		}
+
+		const disposeVisibility = onVisible(root, (visible) => {
+			if (visible) {
+				playCycle();
+			} else {
+				clearCycle();
+			}
+		});
+
+		document.addEventListener(
+			"astro:before-swap",
+			() => {
+				clearCycle();
+				disposeVisibility();
+			},
+			{ once: true },
+		);
+	}
+
+	document
+		.querySelectorAll<HTMLElement>("[data-harness-loop]")
+		.forEach((root) => setupHarnessLoop(root));
+</script>

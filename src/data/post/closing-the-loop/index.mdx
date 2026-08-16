@@ -1,0 +1,39 @@
+---
+publishDate: 2026-08-13T00:00:00Z
+title: "Closing the Loop on Harness Engineering"
+excerpt: "My exploration on harness engineering, and the primitives that allows the agents to do work on loop even when designing harnessess"
+image: "./loop.png"
+tags:
+  - Harness Engineering
+  - AI Agents
+  - Code Generation
+---
+
+import HarnessLoop from "../../../components/blog/HarnessLoop.astro";
+
+# Closing the Loop on Harness Engineering
+
+Up until very recently, improving my agent has been the same loop over and over again:
+Do small change to the harness (prompt changes, tool changes), run the agent again, inspect what happened, repeat.
+
+While there's nothing wrong on this workflow per se, and while the tooling around the inspect phase has gotten better with the tools like Langfuse,
+I still am part of the loop, I still type prompts to the chat, and read the output after the agent has finished.
+
+I wanted to remove myself from that loop.
+
+
+## The Loop
+
+Let's go back to the loop: there's multiple points that need to be handled before we can get ourselves out of the loop.
+
+In the image, I have the basic loop that consist of 4 phases (no matter if human involved).
+
+1) First is running the agent, which is self-evident, in order to test the agent, we need to run it.
+
+2) Then after the run has completed, inspect it's output.
+
+3) Then based on the output, decide whether we are done or agent did pass our judgement.
+
+4) Finally, if the agent iddn ot work correctly, start fixing the harness.
+
+<HarnessLoop />

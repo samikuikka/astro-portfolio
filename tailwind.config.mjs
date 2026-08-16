@@ -61,8 +61,7 @@ export default {
       },
       fontFamily: {
         sans: [
-          "IBM Plex Sans", // ← your Fontsource font
-          "var(--aw-font-sans, ui-sans-serif)",
+          "Inter Variable",
           ...defaultTheme.fontFamily.sans,
         ],
         serif: [
@@ -70,8 +69,7 @@ export default {
           ...defaultTheme.fontFamily.serif,
         ],
         heading: [
-          "IBM Plex Sans",
-          "var(--aw-font-heading, ui-sans-serif)",
+          "Inter Variable",
           ...defaultTheme.fontFamily.sans,
         ],
       },

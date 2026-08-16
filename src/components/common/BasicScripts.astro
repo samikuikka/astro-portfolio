@@ -3,6 +3,9 @@
 ---
 
 <script is:inline define:vars={{ defaultTheme: "dark" }}>
+  // wrapped in an IIFE so the re-initialization guard can early-return
+  // (inline scripts must be valid at top level for Astro's compiler)
+  (() => {
   if (window.basic_script) {
     return;
   }
@@ -151,6 +154,7 @@
     onLoad();
     onPageShow();
   });
+  })();
 </script>
 
 <script is:inline>
@@ -244,9 +248,16 @@
     },
   };
 
-  Observer.start();
+  // Deferred to idle: the attribute-substring selector scan is expensive on
+  // large blog DOMs and would otherwise block first paint/interaction.
+  const startObserver = () => Observer.start();
+  if ("requestIdleCallback" in window) {
+    requestIdleCallback(startObserver, { timeout: 1500 });
+  } else {
+    setTimeout(startObserver, 150);
+  }
 
   document.addEventListener("astro:after-swap", () => {
-    Observer.start();
+    startObserver();
   });
 </script>

@@ -11,14 +11,13 @@ export async function getStaticPaths() {
 ---
 
 <Layout>
-  <div class=""></div>
   <slot name="header">
     <Header {...headerData} isSticky showToggleTheme />
   </slot>
-  <div class="w-full flex justify-center">
+  <main class="w-full flex justify-center">
     <div class="max-w-5xl mt-10 border border-gray-700">
       <Hero />
       <LatestWriting />
     </div>
-  </div>
+  </main>
 </Layout>

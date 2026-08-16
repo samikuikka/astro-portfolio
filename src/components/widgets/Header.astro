@@ -4,7 +4,7 @@ import Logo from "~/components/Logo.astro";
 
 import { trimSlash } from "~/utils/permalinks";
 import type { CallToAction } from "~/types";
-import { LanguagePicker } from "./LanguagePicker";
+import LanguagePicker from "./LanguagePicker.astro";
 import ToggleMenu from "../common/ToggleMenu.astro";
 
 interface Link {
@@ -73,7 +73,7 @@ const currentPath = `/${trimSlash(new URL(Astro.url).pathname)}`;
         <Logo />
       </a>
       <div class="flex items-center md:hidden space-x-2">
-        <LanguagePicker client:idle />
+        <LanguagePicker />
         <ToggleMenu />
       </div>
     </div>
@@ -108,7 +108,7 @@ const currentPath = `/${trimSlash(new URL(Astro.url).pathname)}`;
       ]}
     >
       <div class="items-center hidden md:flex justify-between w-full md:w-auto">
-        <LanguagePicker client:idle />
+        <LanguagePicker />
       </div>
     </div>
   </div>

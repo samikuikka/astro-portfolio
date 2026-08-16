@@ -36,7 +36,7 @@ export const POST_PERMALINK_PATTERN = trimSlash(
 );
 
 const SITE = {
-  site: process.env.PUBLIC_SITE_URL,
+  site: process.env.PUBLIC_SITE_URL || "https://www.samikuikka.com",
   trailingSlash: true,
 };
 

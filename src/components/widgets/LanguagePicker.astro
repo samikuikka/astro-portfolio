@@ -1,0 +1,85 @@
+---
+import { Icon } from "astro-icon/components";
+import { languages } from "~/i18n/ui";
+---
+
+<details class="lang-picker relative group" data-lang-picker>
+  <summary
+    class="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-800 hover:text-white list-none [&::-webkit-details-marker]:hidden"
+  >
+    <Icon name="tabler:world" class="h-8 w-8 p-1" />
+    <span class="sr-only">Toggle language</span>
+  </summary>
+  <ul
+    class="absolute right-0 z-50 mt-2 min-w-[10rem] overflow-hidden rounded-md border border-gray-700 bg-gray-900 py-1 shadow-lg"
+  >
+    {
+      Object.entries(languages).map(([code, label]) => (
+        <li>
+          <button
+            type="button"
+            data-lang={code}
+            class="block w-full px-3 py-2 text-left text-sm text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+          >
+            {label}
+          </button>
+        </li>
+      ))
+    }
+  </ul>
+</details>
+
+<script>
+  const pickers = document.querySelectorAll<HTMLDetailsElement>(
+    "[data-lang-picker]",
+  );
+
+  const showNotice = () => {
+    const notice = document.createElement("div");
+    notice.setAttribute("role", "status");
+    notice.className =
+      "fixed bottom-4 left-1/2 z-[100] -translate-x-1/2 rounded-md border border-gray-700 bg-gray-900 px-4 py-3 text-sm text-gray-200 shadow-lg";
+    notice.innerHTML =
+      "<strong class='font-semibold'>Language not supported</strong><br>The blog is only available in English at the moment.";
+    document.body.appendChild(notice);
+    setTimeout(() => notice.remove(), 3500);
+  };
+
+  pickers.forEach((picker) => {
+    picker.addEventListener("click", (e) => {
+      const target = e.target as HTMLElement;
+      const button = target.closest<HTMLButtonElement>("[data-lang]");
+      if (!button) return;
+
+      const langCode = button.dataset.lang || "en";
+      const route =
+        window.location.pathname
+          .split("/")
+          .filter((segment) => segment.length > 0)
+          .slice(1)
+          .join("/") || "";
+      const forcedLang = route.startsWith("blog") ? "en" : langCode;
+      const newUrl = `/${forcedLang}/${route}`;
+
+      if (route.startsWith("blog") && langCode !== "en") {
+        showNotice();
+        picker.removeAttribute("open");
+        return;
+      }
+
+      if (window.location.pathname !== newUrl) {
+        window.location.href = newUrl;
+      }
+      picker.removeAttribute("open");
+    });
+  });
+
+  // Close any open picker when clicking outside of it
+  document.addEventListener("click", (e) => {
+    pickers.forEach((picker) => {
+      if (picker.open && !e.composedPath().includes(picker)) {
+        picker.removeAttribute("open");
+      }
+    });
+  });
+</script>

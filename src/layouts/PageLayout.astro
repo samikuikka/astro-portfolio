@@ -2,9 +2,16 @@
 import Layout from "~/layouts/Layout.astro";
 import Header from "~/components/widgets/Header.astro";
 import { headerData } from "~/navigation";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
 ---
 
-<Layout>
+<Layout title={title} description={description}>
   <slot name="header">
     <Header {...headerData} isSticky showToggleTheme />
   </slot>

@@ -16,6 +16,7 @@ export interface Post {
   draft?: boolean;
   Content?: AstroComponentFactory;
   content?: string;
+  headings?: Heading[];
   readingTime?: number;
   tags?: Taxonomy[];
 }
@@ -23,6 +24,12 @@ export interface Post {
 export interface Taxonomy {
   slug: string;
   title: string;
+}
+
+export interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
 }
 
 export interface CallToAction extends Omit<HTMLAttributes<"a">, "slot"> {

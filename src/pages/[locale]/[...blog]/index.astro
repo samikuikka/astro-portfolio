@@ -24,7 +24,7 @@ const { post } = Astro.props as Props;
 const url = getCanonical(getPermalink(post.permalink, "post"));
 ---
 
-<Layout>
+<Layout title={post.title} description={post.excerpt}>
   <SinglePost post={{ ...post }} url={url}>
     {
       post.Content ? (

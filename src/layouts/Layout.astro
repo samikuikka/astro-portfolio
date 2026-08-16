@@ -1,6 +1,6 @@
 ---
 import "~/assets/styles/tailwind.css";
-import "@fontsource-variable/ibm-plex-sans";
+import "@fontsource-variable/inter";
 
 import CommonMeta from "~/components/common/CommonMeta.astro";
 import CustomStyles from "~/components/CustomStyles.astro";
@@ -10,13 +10,20 @@ import Analytics from "@vercel/analytics/astro";
 
 // Comment the line below to disable View Transitions
 import { ClientRouter } from "astro:transitions";
-import { Toaster } from "~/components/ui/toaster";
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+}
+
+const { title, description, image } = Astro.props;
 ---
 
 <!doctype html>
 <html lang="en" class="2xl:text-[20px]">
   <head>
-    <CommonMeta />
+    <CommonMeta title={title} description={description} image={image} />
     <link
       rel="alternate"
       type="application/rss+xml"
@@ -36,6 +43,5 @@ import { Toaster } from "~/components/ui/toaster";
   >
     <slot />
     <BasicScripts />
-    <Toaster client:only />
   </body>
 </html>

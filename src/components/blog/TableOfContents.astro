@@ -1,0 +1,77 @@
+---
+export interface TocHeading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+interface Props {
+  headings: TocHeading[];
+}
+
+const { headings } = Astro.props;
+const tocHeadings = headings.filter((h) => h.depth === 2 || h.depth === 3);
+---
+
+{
+  tocHeadings.length > 0 && (
+    <nav id="toc" class="w-full" aria-label="Table of contents">
+      <div class="border-l-2 border-gray-700 pl-6">
+        <h4 class="text-xs font-semibold text-gray-500 mb-4 uppercase tracking-widest">
+          On this page
+        </h4>
+        <ul class="space-y-1">
+          {tocHeadings.map((heading) => (
+            <li class={heading.depth === 3 ? "ml-4 mt-2" : "mt-3"}>
+              <a
+                href={`#${heading.slug}`}
+                data-toc-link={heading.slug}
+                class="block py-1 px-2 text-sm border-l-2 transition-all duration-200 text-gray-500 border-transparent hover:text-gray-300 hover:bg-gray-800/30"
+              >
+                {heading.text}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </nav>
+  )
+}
+
+<script>
+  // Scroll-spy: highlight the TOC link for the heading currently in view.
+  // The TOC only renders on >= 2xl screens, so skip the observer below that.
+  const toc = document.getElementById("toc");
+  const wide = window.matchMedia("(min-width: 1536px)");
+
+  if (toc && wide.matches) {
+    const links = Array.from(
+      toc.querySelectorAll<HTMLAnchorElement>("[data-toc-link]"),
+    );
+
+    const setActive = (id: string) => {
+      links.forEach((link) => {
+        const active = link.dataset.tocLink === id;
+        link.classList.toggle("text-emerald-400", active);
+        link.classList.toggle("border-emerald-400", active);
+        link.classList.toggle("bg-emerald-500/5", active);
+        link.classList.toggle("text-gray-500", !active);
+        link.classList.toggle("border-transparent", !active);
+      });
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) setActive(entry.target.id);
+        });
+      },
+      { rootMargin: "-100px 0px -66%", threshold: 0 },
+    );
+
+    links.forEach((link) => {
+      const heading = document.getElementById(link.dataset.tocLink || "");
+      if (heading) observer.observe(heading);
+    });
+  }
+</script>

@@ -10,7 +10,7 @@ export async function GET(context) {
     title: "Sami Kuikka — Writing",
     description:
       "Notes on agents, evals, prompt optimization, and building things from scratch.",
-    site: context.site ?? "https://samikuikka.com",
+    site: context.site ?? "https://www.samikuikka.com",
     items: posts.map((post) => ({
       title: post.title,
       description: post.excerpt ?? "",
