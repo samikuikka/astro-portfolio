@@ -77,11 +77,13 @@ const { post } = Astro.props;
           <Image
             src={post.image}
             class="max-w-full lg:max-w-[900px] mx-auto mb-6 sm:rounded-md bg-white dark:bg-slate-700"
-            sizes="(max-width: 900px) 400px, 900px"
+            sizes="(max-width: 640px) calc(100vw - 2rem), (max-width: 1024px) calc(100vw - 3rem), 900px"
+            breakpoints={[400, 640, 928]}
             alt={post?.excerpt || ""}
             width={900}
             height={506}
             loading="eager"
+            fetchpriority="high"
             decoding="async"
           />
         ) : (

@@ -1,0 +1,11 @@
+/* Single-subset @font-face: the site is English (CJK text on /cn falls back
+   to system fonts regardless), so we ship only the latin variable font
+   instead of fontsource's seven-subset CSS. */
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("@fontsource-variable/inter/files/inter-latin-wght-normal.woff2")
+    format("woff2-variations");
+}

@@ -2,7 +2,7 @@
 import { fetchPosts } from "~/utils/blog";
 import { getPermalink } from "~/utils/permalinks";
 import { getLangFromUrl, useTranslations } from "~/i18n/utils";
-import { Clock, ArrowRight } from "lucide-react";
+import { Icon } from "astro-icon/components";
 import { Image } from "astro:assets";
 
 const lang = getLangFromUrl(Astro.url);
@@ -35,7 +35,7 @@ const localePosts = latestPosts.map((post) => ({
         class="hidden md:flex items-center gap-2 text-emerald-400 hover:text-emerald-300 transition-colors font-medium"
       >
         View all
-        <ArrowRight class="w-5 h-5" />
+        <Icon name="tabler:arrow-right" class="w-5 h-5 inline-block" />
       </a>
     </div>
 
@@ -56,6 +56,7 @@ const localePosts = latestPosts.map((post) => ({
                   width={600}
                   height={300}
                   sizes="(max-width: 768px) 100vw, (max-width: 1040px) 50vw, 33vw"
+                  breakpoints={[400, 640]}
                   class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <div class="absolute inset-0 bg-gradient-to-t from-gray-900/90 to-transparent" />
@@ -64,7 +65,7 @@ const localePosts = latestPosts.map((post) => ({
             
             <div class="relative p-6 flex flex-col flex-grow">
               <div class="flex items-center gap-2 text-sm text-gray-400 mb-4">
-                <Clock class="w-4 h-4" />
+                <Icon name="tabler:clock" class="w-4 h-4 inline-block" />
                 <time datetime={String(post.publishDate)}>
                   {post.publishDate.toLocaleDateString(locale, {
                     year: "numeric",
@@ -105,7 +106,7 @@ const localePosts = latestPosts.map((post) => ({
         class="inline-flex items-center gap-2 text-emerald-400 hover:text-emerald-300 transition-colors font-medium"
       >
         View all posts
-        <ArrowRight class="w-5 h-5" />
+        <Icon name="tabler:arrow-right" class="w-5 h-5 inline-block" />
       </a>
     </div>
   </div>

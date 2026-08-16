@@ -5,8 +5,6 @@ import path from "path";
 
 import { unified } from "@astrojs/markdown-remark";
 
-import react from "@astrojs/react";
-
 import sitemap from "@astrojs/sitemap";
 
 import icon from "astro-icon";
@@ -50,22 +48,16 @@ export default defineConfig({
     // page background; github-dark-default uses #8b949e instead
     shikiConfig: { theme: "github-dark-default" },
   },
-  integrations: [react(), sitemap(), icon({
+  integrations: [sitemap(), icon({
     include: {
       tabler: ['*'],
-      'flat-color-icons': [
-        'template',
-        'gallery',
-        'approval',
-        'document',
-        'advertising',
-        'currency-exchange',
-        'voice-presentation',
-        'business-contact',
-        'database',
-      ],
     },
   }), mdx()],
+  build: {
+    // Small site: inlining CSS into each page removes the render-blocking
+    // stylesheet request entirely (pages share no cached CSS anyway).
+    inlineStylesheets: "always",
+  },
   vite: {
     resolve: {
       alias: {
