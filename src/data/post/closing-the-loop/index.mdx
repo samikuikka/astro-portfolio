@@ -1,7 +1,7 @@
 ---
 publishDate: 2026-08-13T00:00:00Z
 title: "Closing the Loop on Harness Engineering"
-excerpt: "My exploration on harness engineering, and the primitives that allows the agents to do work on loop even when designing harnessess"
+excerpt: "My exploration of harness engineering, and the primitives that allow the agents to do work on loop even when designing harnesses"
 image: "./loop.png"
 tags:
   - Harness Engineering
@@ -10,30 +10,274 @@ tags:
 ---
 
 import HarnessLoop from "../../../components/blog/HarnessLoop.astro";
+import CodeBlock from "../../../components/blog/CodeBlock.astro";
+import TerminalDemo from "../../../components/blog/TerminalDemo.astro";
+import AgentSession from "../../../components/ui/AgentSession.astro";
+import LinkCard from "../../../components/ui/LinkCard.astro";
 
 # Closing the Loop on Harness Engineering
 
 Up until very recently, improving my agent has been the same loop over and over again:
-Do small change to the harness (prompt changes, tool changes), run the agent again, inspect what happened, repeat.
+Make small changes to the harness (prompt changes, tool changes), run the agent again, inspect what happened, repeat.
 
-While there's nothing wrong on this workflow per se, and while the tooling around the inspect phase has gotten better with the tools like Langfuse,
-I still am part of the loop, I still type prompts to the chat, and read the output after the agent has finished.
+Removing the human doesn't require one magical autonomous agent. It requires turning each of the things the human does in the loop into an interface an agent can use.
 
 I wanted to remove myself from that loop.
 
-
 ## The Loop
 
-Let's go back to the loop: there's multiple points that need to be handled before we can get ourselves out of the loop.
+Let's go back to the loop: there are multiple points that need to be handled before we can get ourselves out of the loop.
 
-In the image, I have the basic loop that consist of 4 phases (no matter if human involved).
+In the diagram, I have the basic loop that consists of 4 phases (no matter if a human is involved).
 
 1) First is running the agent, which is self-evident, in order to test the agent, we need to run it.
 
-2) Then after the run has completed, inspect it's output.
+2) Then after the run has completed, inspect its output.
 
-3) Then based on the output, decide whether we are done or agent did pass our judgement.
+3) Then based on the output, decide whether we are done or the agent passed our judgement.
 
-4) Finally, if the agent iddn ot work correctly, start fixing the harness.
+4) Finally, if the agent did not work correctly, start fixing the harness.
 
 <HarnessLoop />
+
+### Giving the Agent a Way to Run
+
+The first requirement is simple: the coding agent needs a way to invoke the system it is working on.
+
+I don't want the testing framework to own my agent implementation or just wrap the model calls. I want to run real systems.
+
+In Apo, the boundary is the adapter. So the responsibility shifts, I give an interface, the target system implements it. This is through a fixed lifecycle: `initialize` to load your inputs, `startSession` to open the session, where you then implement how turns in the system are handled. 
+
+
+<CodeBlock
+  title="adapter.ts"
+  lang="ts"
+  code={`import { defineAdapter } from "@apo-ai/sdk/agent-task";
+import { z } from "zod";
+
+export const myAdapter = defineAdapter({
+  name: "my-agent",
+  deliverables: { result: z.string() },
+  async startSession(ctx) {
+    return {
+      async sendUserTurn(turn, { trace, parentSpanId }) {
+        const response = await runMyAgent(String(turn), { trace, parentSpanId });
+        return { response };
+      },
+    };
+  },
+  async collectDeliverables(ctx) {
+    return { result: /* mine the session state */ "" };
+  },
+});`}
+/>
+
+
+What this achieves is that Apo can actually run your real system at the level you wish.
+The adapter is a prerequisite for running your system. What is interesting is when we connect it to the CLI:
+
+<TerminalDemo
+  command="apo task run answer-from-spec"
+  lines={[
+    { parts: [{ text: "Executor: caller (recorded in a1b2c3d4)", tone: "dim" }] },
+    { parts: [{ text: "Revision: clean worktree 9f2c7d81e4b9 from github.com/acme/agent", tone: "dim" }] },
+    { text: "" },
+    { parts: [{ text: "FAIL", tone: "danger" }, { text: " answer-from-spec", tone: "bold" }] },
+    { parts: [{ text: "  Checks:", tone: "bold" }] },
+    { parts: [{ text: "    " }, { text: "FAIL", tone: "danger" }, { text: " reads-source-first" }] },
+    { text: "      ✗ check", tone: "danger" },
+    { text: "        answer-from-spec.eval.ts:12:5", tone: "dim" },
+    { text: "        − Expected: read_file called on spec.md", tone: "success" },
+    { text: "        + Received: answered without reading the source", tone: "danger" },
+    { parts: [{ text: "    " }, { text: "PASS", tone: "success" }, { text: " answer-is-correct" }] },
+    { text: "" },
+    { parts: [{ text: "Run:     ", tone: "dim" }, { text: "run_de89cab0f1e2d3a4b5c6d7e8", tone: "bold" }] },
+    { parts: [{ text: "Inspect: ", tone: "dim" }, { text: "apo runs show run_de89cab0f1e2d3a4b5c6d7e8", tone: "dim" }] },
+  ]}
+/>
+
+Now, we can just give the CLI to the agent and Voilà, the agent can run your system without touching the UI and the browser.
+
+
+### Giving the Agent a Way to Inspect
+
+In order for the agent to work on its own, running is not sufficient. The agent also needs to know what happened in the run!
+
+There are already mature solutions for tracing and observability for the agent like [Langfuse](https://langfuse.com/),
+what we have in Apo are similar concepts for tracing.
+
+The important part is not building another tracing system. What we want is that our agents have the trace available. Apo consumes OpenTelemetry data during the run, and exposes the resulting trace through the CLI.
+
+<CodeBlock
+  title="tracer.ts"
+  lang="ts"
+  code={`import { generateText } from "ai";
+  import { createOpenAI } from "@ai-sdk/openai";
+  import { registerApoTracing } from "@apo-ai/sdk/agent-task";
+  
+  // Register once at module load — idempotent.
+  await registerApoTracing();
+  
+  const client = createOpenAI({ apiKey, baseURL: "https://openrouter.ai/api/v1" });
+  
+  async sendUserTurn(turn, { trace, parentSpanId }) {
+    const result = await generateText({
+      model: client.chat("google/gemini-2.5-flash-lite"),
+      system: SYSTEM_PROMPT,
+      messages,
+      tools,
+      experimental_telemetry: { isEnabled: true }, // ← that's it
+    });
+    return { response: result.text };
+  }`}
+/>
+
+Once the telemetry flows, the run records a trace the agent can read from the CLI.
+This is the trace behind that failing run above, one model call, and nothing nested under it.
+
+<TerminalDemo
+  command="apo traces show f1a2b3c4 --verbose"
+  lines={[
+    { text: "Trace: f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6", tone: "bold" },
+    { text: "  Task:      answer-from-spec" },
+    { text: "  Status:    success" },
+    { text: "  Duration:  0.8s" },
+    { text: "  Calls:     5" },
+    { text: "  Cost:      $0.003400" },
+    { text: "  Tokens:    1,247" },
+    { text: "  Created:   7/16/2026, 9:42:00 AM" },
+    { text: "" },
+    { text: "  Calls:", tone: "bold" },
+    { parts: [{ text: "  ", tone: "dim" }, { text: "  apo.task.run             " }, { text: "-                           ", tone: "dim" }, { text: "   0.8s           -         -" }] },
+    { parts: [{ text: "    ", tone: "dim" }, { text: "  task.load                " }, { text: "-                           ", tone: "dim" }, { text: "   0.0s           -         -" }] },
+    { parts: [{ text: "    ", tone: "dim" }, { text: "  adapter.open-session     " }, { text: "-                           ", tone: "dim" }, { text: "   0.0s           -         -" }] },
+    { parts: [{ text: "    ", tone: "dim" }, { text: "  answer-from-spec         " }, { text: "google/gemini-2.5-flash-lite", tone: "dim" }, { text: "   0.8s   $0.003400     1,247" }] },
+    { text: "        tokens: 812 prompt + 435 completion", tone: "dim" },
+    { text: "        messages:", tone: "dim" },
+    { text: "          [system] Answer strictly from the source document provided in the task.", tone: "dim" },
+    { text: "          [user] What termination clauses apply to this agreement?", tone: "dim" },
+    { text: "          [assistant] Either party may terminate for material breach with 30 days' written notice.", tone: "dim" },
+    { parts: [{ text: "    ", tone: "dim" }, { text: "  adapter.collect-deliverables " }, { text: "-                           ", tone: "dim" }, { text: "   0.0s           -         -" }] },
+    { text: "        output:", tone: "dim" },
+    { text: "          {\"result\":\"Either party may terminate for material breach with 30 days' notice.\"}", tone: "dim" },
+  ]}
+/>
+
+### Giving the Agent a Way to Judge
+
+Now your coding agent can run your system, and trace your system. However, it doesn't know what you want before you tell it. There needs to be a golden standard on how the agent should behave. How I chose to do it is by tests, "unit-test-looking" framework tests.
+
+Agent behaviour isn't always reducible to an exact value. Some requirements are deterministic, like "did it call `read_file`", while others are semantic, like "did it extract the relevant party name from the document".
+
+So Apo lets both kinds of checks live side by side.
+
+<CodeBlock
+  title="example.eval.ts"
+  lang="ts"
+  code={`test("reads-source-first", (t) => {
+    t.calledTool("read_file", { input: { path: "spec.md" } });
+    t.noFailedActions();
+  });
+
+  test("answer-is-correct", async (t, { deliverables }) => {
+    t.check(deliverables.answer, matches(answerSchema));
+    await t.judge(
+      deliverables.answer,
+      "PASS when the answer is accurate to the source and adds nothing false.",
+    );
+  });`}
+/>
+
+The syntax is not the most important part here — what this achieves is.
+This allows more like "TDD" approach for harness engineering. We can define our wanted behaviour from the agent with the `example.eval.ts` file, and let the agent run the tests until they pass.
+
+Here's what a red state looks like when the agent runs those tests — the deterministic one green, the judged one red, with the judge's diff:
+
+<TerminalDemo
+  command="apo runs show run_b7e4c9a1f5d2e8a3c6b0d4f7"
+  lines={[
+    { text: "Run: run_b7e4c9a1f5d2e8a3c6b0d4f7", tone: "bold" },
+    { text: "  Task:     answer-from-spec" },
+    { text: "  Path:     answer-from-spec" },
+    { parts: [{ text: "  Batch:    bch_7b97a3f2c1d84e5b9066aabb " }, { text: "(apo batch show bch_7b97a3f2c1d84e5b9066aabb)", tone: "dim" }] },
+    { text: "  Adapter:  real-agent" },
+    { text: "  Model:    google/gemini-2.5-flash-lite" },
+    { text: "  Effort:   -" },
+    { text: "  Status:   failed" },
+    { parts: [{ text: "  Result:   " }, { text: "FAIL", tone: "danger" }] },
+    { text: "  Checks:   1/2 passed (1 failed)" },
+    { text: "  Started:  7/16/2026, 9:58:11 AM" },
+    { text: "  Completed: 7/16/2026, 9:58:12 AM" },
+    { text: "  Source:   cli" },
+    { text: "  Cost:     $0.003400" },
+    { text: "  Tokens:   1,247" },
+    { parts: [{ text: "  Trace:    c47d1e9b2a6f3c8d5e0a7b4c9d2e6f1a " }, { text: "(apo traces show c47d1e9b2a6f3c8d5e0a7b4c9d2e6f1a)", tone: "dim" }] },
+    { text: "" },
+    { text: "  Checks:", tone: "bold" },
+    { parts: [{ text: "    " }, { text: "PASS", tone: "success" }, { text: " reads-source-first" }] },
+    { parts: [{ text: "    " }, { text: "FAIL", tone: "danger" }, { text: " answer-is-correct" }] },
+    { text: "      the answer is fluent but not grounded in spec.md", tone: "dim" },
+    { parts: [{ text: "      " }, { text: "✗", tone: "danger" }, { text: " judge" }] },
+    { text: "        answer-from-spec.eval.ts:24:5", tone: "dim" },
+    { text: "        − Expected: accurate to the source, adds nothing false", tone: "success" },
+    { text: "        + Received: termination clause contradicts spec.md", tone: "danger" },
+    { text: "" },
+    { text: "  Deliverables: answer (json)" },
+    { text: "    Read one: apo runs deliverable run_b7e4c9a1f5d2e8a3c6b0d4f7 answer", tone: "dim" },
+  ]}
+/>
+
+If you look at the test, you can see the `deliverables` part in the second test.
+I go all-in on the notion of deliverables: usually agents don’t just talk and give an answer, they also create files or make changes to the database. In Apo these are called "deliverables", and they are caught in the adapter lifecycle. This allows us to test the actual result, not just what the agent said — for example, does the newly created DOCX contain the correct information, or did the DB status for the user change.
+
+Test the deliverable, not the conversation!
+
+### Giving the Agent a Way to Fix
+
+Final step is the easiest. Your coding agent can run, can look at traces, and can see your golden standard.
+Now it just needs to run in your codebase and use the CLI to fix the problems found.
+This loop ends when the agent has found the problems and has made the changes so the tests start to pass again.
+
+Here's that whole loop as a mocked agent session.
+
+<AgentSession
+  prompt="make answer-from-spec pass"
+  duration="2m 04s"
+  tokens={51240}
+  cost={0.2612}
+  entries={[
+    { type: "cmd", text: "apo task run answer-from-spec" },
+    { type: "out", parts: [{ text: "Executor: caller (recorded in a1b2c3d4)", tone: "dim" }] },
+    { type: "out", parts: [{ text: "FAIL", tone: "danger" }, { text: " answer-from-spec", tone: "bold" }] },
+    { type: "out", parts: [{ text: "    " }, { text: "FAIL", tone: "danger" }, { text: " reads-source-first" }] },
+    { type: "out", parts: [{ text: "    " }, { text: "PASS", tone: "success" }, { text: " answer-is-correct" }] },
+    { type: "out", parts: [{ text: "Run: ", tone: "dim" }, { text: "run_de89cab0f1e2d3a4b5c6d7e8", tone: "bold" }] },
+    { type: "note", text: "Which call broke reads-source-first? Open the trace." },
+    { type: "cmd", text: "apo traces show f1a2b3c4" },
+    { type: "out", text: "    answer-from-spec  google/gemini-2.5-flash-lite   0.8s   $0.003400     1,247" },
+    { type: "out", text: "        tokens: 812 prompt + 435 completion", tone: "dim" },
+    { type: "note", text: "No read_file span under the model call — the agent answered from memory. Fix: put spec.md into the system prompt." },
+    { type: "cmd", text: "edit src/agent.ts" },
+    { type: "out", text: '+  const spec = readFileSync(`${ctx.taskDir}/spec.md`, "utf8");', tone: "success" },
+    { type: "out", text: '+  system: SYSTEM_PROMPT + "\\n\\nSource document:\\n\\n" + spec,', tone: "success" },
+    { type: "cmd", text: "apo task run answer-from-spec" },
+    { type: "out", parts: [{ text: "Executor: caller (recorded in a1b2c3d4)", tone: "dim" }] },
+    { type: "out", parts: [{ text: "PASS", tone: "success" }, { text: " answer-from-spec", tone: "bold" }] },
+    { type: "out", parts: [{ text: "    " }, { text: "PASS", tone: "success" }, { text: " reads-source-first" }] },
+    { type: "out", parts: [{ text: "    " }, { text: "PASS", tone: "success" }, { text: " answer-is-correct" }] },
+    { type: "out", parts: [{ text: "Run: ", tone: "dim" }, { text: "run_66d0b1e5c8f2a4d7b9e0c3f5a8d2e6b", tone: "bold" }] },
+    { type: "say", text: "Loop closed — 2 runs, 1 fix, no human in between." },
+  ]}
+/>
+
+## Closing the Loop
+
+The code hasn't become irrelevant. However, I'm increasingly engineering directly in the feedback loop around the code.
+
+If the harness can run the real system, expose what happened, judge the outcome, and fix the harness with enough information to change it, then my job becomes increasingly about specifying the constraints the loop should optimize.
+
+Recently, I find myself reviewing changes to `eval.ts` more carefully than changes to the implementation itself.
+
+You can try all this yourself! Apo is open-source and free: [docs.test-apo.online](https://docs.test-apo.online/)
+
+<LinkCard url="https://docs.test-apo.online/" />

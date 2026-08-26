@@ -24,7 +24,11 @@ const { post } = Astro.props as Props;
 const url = getCanonical(getPermalink(post.permalink, "post"));
 ---
 
-<Layout title={post.title} description={post.excerpt}>
+<Layout
+  title={post.title}
+  description={post.excerpt}
+  image={`/og/${post.slug}.png`}
+>
   <SinglePost post={{ ...post }} url={url}>
     {
       post.Content ? (

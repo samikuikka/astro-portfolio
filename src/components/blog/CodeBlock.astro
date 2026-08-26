@@ -1,0 +1,222 @@
+---
+/**
+ * CodeBlock — a syntax-highlighted code panel in the apo docs style.
+ *
+ * Replicates the Expressive Code blocks on docs.test-apo.online (Starlight):
+ * sharp corners, #23262f panel, Night-Owl-derived token colors (starlight-dark),
+ * a filename tab attached to the panel's top-left edge, and a copy button
+ * that fades in on hover with a "Copied!" tooltip. Highlighting runs through
+ * shiki at build time — the only client script is the copy button.
+ *
+ * The panel is always dark, matching the site's existing shiki code blocks
+ * (single dark theme), so it sits consistently in both site color modes.
+ */
+import { Icon } from "astro-icon/components";
+import { codeToHtml } from "shiki";
+
+interface Props {
+	code: string;
+	lang?: string;
+	title?: string;
+}
+
+const { code, lang = "ts", title } = Astro.props;
+
+const trimmed = code.trim();
+// shiki returns a full <pre>; keep only its <code> so our own panel styles
+// (background, padding) are not fought by the theme's inline styles.
+const highlighted = (await codeToHtml(trimmed, { lang, theme: "night-owl" }))
+	.replace(/^<pre[^>]*>/, "")
+	.replace(/<\/pre>$/, "");
+---
+
+<figure class="codeblock not-prose" data-codeblock>
+	{title && <span class="codeblock__tab">{title}</span>}
+	<div class="codeblock__panel">
+		<pre data-language={lang} set:html={highlighted} />
+		<div class="codeblock__copy">
+			<span class="codeblock__feedback" data-feedback>Copied!</span>
+			<button class="codeblock__button" type="button" aria-label="Copy code" data-copy data-code={trimmed}>
+				<span class="codeblock__icon codeblock__icon--copy"><Icon name="tabler:copy" /></span>
+				<span class="codeblock__icon codeblock__icon--check"><Icon name="tabler:check" /></span>
+			</button>
+		</div>
+	</div>
+</figure>
+
+<style>
+	.codeblock {
+		--cb-border: rgb(140 146 166 / 25%);
+		position: relative;
+		/* Room for the title tab, which sits on the panel's top edge. */
+		margin: 2.3rem 0 1.5rem;
+		font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", monospace;
+	}
+
+	/* Filename tab — attached to the panel's top-left corner: same background,
+	   border on every side but the bottom, so it merges with the panel. */
+	.codeblock__tab {
+		position: absolute;
+		bottom: 100%;
+		left: -1px;
+		padding: 0.18rem 0.9rem 0.14rem;
+		background: #23262f;
+		border: 1px solid var(--cb-border);
+		border-bottom: none;
+		color: #d6deeb;
+		font-size: 0.75rem;
+		line-height: 1.4;
+	}
+
+	.codeblock__panel {
+		position: relative;
+		border: 1px solid var(--cb-border);
+		background: #23262f;
+	}
+
+	.codeblock pre {
+		margin: 0;
+		padding: 0.75rem 1rem;
+		overflow-x: auto;
+		font-size: 0.8rem;
+		line-height: 1.65;
+		color: #d6deeb;
+		tab-size: 2;
+	}
+
+	.codeblock pre :global(code) {
+		display: block;
+		min-width: max-content;
+	}
+
+	/* Copy button — top-right inside the panel, EC-style: invisible until the
+	   panel is hovered (pointer devices), always visible on touch. */
+	.codeblock__copy {
+		position: absolute;
+		top: 0.3rem;
+		right: 0.4rem;
+		display: flex;
+		align-items: center;
+	}
+
+	.codeblock__button {
+		display: grid;
+		place-items: center;
+		width: 1.7rem;
+		height: 1.7rem;
+		padding: 0;
+		background: transparent;
+		border: none;
+		color: #8b93a7;
+		cursor: pointer;
+		opacity: 1;
+		transition: opacity 150ms ease, color 150ms ease;
+	}
+
+	.codeblock__button:hover {
+		color: #d6deeb;
+	}
+
+	.codeblock__icon {
+		grid-area: 1 / 1;
+		display: inline-flex;
+		transition: opacity 150ms ease;
+	}
+
+	.codeblock__icon :global(svg) {
+		width: 1.05rem;
+		height: 1.05rem;
+	}
+
+	.codeblock__icon--check {
+		opacity: 0;
+		color: #5fe6ad;
+	}
+
+	.codeblock__button[data-copied] .codeblock__icon--copy {
+		opacity: 0;
+	}
+
+	.codeblock__button[data-copied] .codeblock__icon--check {
+		opacity: 1;
+	}
+
+	@media (hover: hover) {
+		.codeblock__button {
+			opacity: 0;
+		}
+
+		.codeblock:hover .codeblock__button,
+		.codeblock__button:focus-visible,
+		.codeblock__button[data-copied] {
+			opacity: 1;
+		}
+	}
+
+	/* "Copied!" tooltip, matching EC's success feedback. */
+	.codeblock__feedback {
+		margin-right: 0.4rem;
+		padding: 0.1rem 0.5rem;
+		background: #14351f;
+		border-radius: 0.2rem;
+		color: #7ce3b1;
+		font-family: var(--aw-font-sans, ui-sans-serif, system-ui, sans-serif);
+		font-size: 0.7rem;
+		opacity: 0;
+		transform: translateX(0.25rem);
+		transition:
+			opacity 150ms ease,
+			transform 150ms ease;
+		pointer-events: none;
+	}
+
+	.codeblock__feedback.show {
+		opacity: 1;
+		transform: translateX(0);
+	}
+</style>
+
+<script>
+	function setupCopy(root: HTMLElement) {
+		const button = root.querySelector<HTMLButtonElement>("[data-copy]");
+		const feedback = root.querySelector<HTMLElement>("[data-feedback]");
+		if (!button || !feedback) return;
+
+		let timer: number | undefined;
+
+		button.addEventListener("click", async () => {
+			const text = button.dataset.code ?? "";
+			try {
+				await navigator.clipboard.writeText(text);
+			} catch {
+				const textarea = document.createElement("textarea");
+				textarea.value = text;
+				textarea.style.position = "fixed";
+				textarea.style.opacity = "0";
+				document.body.appendChild(textarea);
+				textarea.select();
+				document.execCommand("copy");
+				textarea.remove();
+			}
+			button.setAttribute("data-copied", "");
+			feedback.classList.add("show");
+			window.clearTimeout(timer);
+			timer = window.setTimeout(() => {
+				button.removeAttribute("data-copied");
+				feedback.classList.remove("show");
+			}, 1600);
+		});
+
+		document.addEventListener(
+			"astro:before-swap",
+			() => {
+				window.clearTimeout(timer);
+			},
+			{ once: true },
+		);
+	}
+
+	document
+		.querySelectorAll<HTMLElement>("[data-codeblock]")
+		.forEach((root) => setupCopy(root));
+</script>

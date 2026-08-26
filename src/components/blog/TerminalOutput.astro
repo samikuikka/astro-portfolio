@@ -1,0 +1,100 @@
+---
+/**
+ * TerminalOutput — a static, colored terminal block for output sections.
+ * Ported from apo docs (apps/docs/src/components/demos/TerminalOutput.astro).
+ *
+ * TerminalDemo is interactive — click Run and the output streams. But posts
+ * also document a command's full output format, and those read better as a
+ * pre-rendered block with the same coloring the real CLI prints (green PASS,
+ * red FAIL, dim hints). Accepts the same line model as TerminalDemo, so a
+ * single line can mix tones via `parts` (e.g. only the [FAIL] tag in red):
+ *
+ *   <TerminalOutput
+ *     lines={[
+ *       { text: "Run: de89cab0" },
+ *       { text: "  Result:   FAIL", tone: "danger" },
+ *       { parts: [{ text: "  " }, { text: "✓", tone: "success" }, { text: " no-failed-actions" }] },
+ *     ]}
+ *   />
+ *
+ * Same visual language as TerminalDemo (dark panel, monospace, colored parts)
+ * but no Run button, no streaming. not-prose escapes the typography container.
+ */
+type Tone = "default" | "danger" | "success" | "dim" | "bold";
+type Part = { text: string; tone?: Tone };
+type Line = string | { text?: string; tone?: Tone; parts?: Part[] };
+
+interface Props {
+	lines: Line[];
+}
+
+const { lines } = Astro.props;
+
+// Drop empty-string parts so separator lines render truly empty (:empty can
+// then give them height); Astro renders `{""}` as a stray text node otherwise.
+const normalized = lines
+	.map((line) =>
+		typeof line === "string"
+			? [{ text: line }]
+			: line.parts ?? [{ text: line.text ?? "", tone: line.tone }],
+	)
+	.map((parts) => parts.filter((part) => part.text !== ""));
+---
+
+<div class="terminal-output not-prose">
+	{
+		normalized.map((parts) =>
+			parts.length === 1 && !parts[0].tone ? (
+			<span class="terminal-output__line">{parts[0].text}</span>
+			) : (
+			<span class="terminal-output__line">{parts.map((part) => (<span class:list={["t", part.tone ? `is-${part.tone}` : ""]}>{part.text}</span>))}</span>
+			),
+		)
+	}
+</div>
+
+<style>
+	.terminal-output {
+		margin: 1.5rem 0;
+		border: 1px solid #232838;
+		border-radius: 0.5rem;
+		background: #0b0e16;
+		font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", monospace;
+		font-size: 0.8rem;
+		line-height: 1.5;
+		padding: 0.6rem 0.8rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.1rem;
+		overflow-x: auto;
+	}
+
+	/* Flex row: whitespace-only text nodes between parts (Astro's renderer
+	   emits newline separators) are not rendered as flex items, so they
+	   can't break the pre-formatted line. */
+	.terminal-output__line {
+		display: flex;
+		min-height: 0.6rem;
+		color: #c7ccd9;
+	}
+
+	/* Per-part tones — same palette as TerminalDemo. `pre` keeps the exact
+	   output format; the container scrolls horizontally if a line is long. */
+	:global(.t) {
+		color: #c7ccd9;
+		white-space: pre;
+	}
+	:global(.t.is-danger) {
+		color: #f5a088;
+	}
+	:global(.t.is-success) {
+		color: #5fe6ad;
+	}
+	:global(.t.is-dim) {
+		color: #8b93a7;
+	}
+	:global(.t.is-bold) {
+		color: #f3f5fb;
+		font-weight: 600;
+	}
+</style>

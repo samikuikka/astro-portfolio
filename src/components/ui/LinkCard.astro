@@ -1,0 +1,148 @@
+---
+/**
+ * LinkCard — a rich link preview card (the Slack/Notion-style unfurl) rendered
+ * at build time. Pass a URL; the target page's Open Graph tags are fetched
+ * and parsed during the Astro build, and the card shows title, description,
+ * domain, and the og:image thumbnail when one exists. Any field can be
+ * overridden via props; if the fetch fails or tags are missing, the card
+ * degrades to hostname + URL.
+ *
+ * The panel is always dark, matching the CodeBlock / TerminalDemo /
+ * AgentSession family, so it reads consistently in both site color modes.
+ */
+interface Props {
+	url: string;
+	title?: string;
+	description?: string;
+	image?: string;
+}
+
+const props = Astro.props;
+
+type Fetched = { title?: string; description?: string; image?: string };
+
+async function fetchOpenGraph(url: string): Promise<Fetched> {
+	try {
+		const response = await fetch(url, {
+			headers: { "user-agent": "samikuikka.com link-card builder" },
+		});
+		if (!response.ok) return {};
+		const html = await response.text();
+		const meta = (property: string) =>
+			html.match(
+				new RegExp(
+					`<meta[^>]+(?:property|name)=["']${property}["'][^>]*content=["']([^"']*)["']`,
+					"i",
+				),
+			)?.[1] ??
+			html.match(
+				new RegExp(
+					`<meta[^>]+content=["']([^"']*)["'][^>]*(?:property|name)=["']${property}["']`,
+					"i",
+				),
+			)?.[1];
+		return {
+			title: meta("og:title") ?? html.match(/<title>([^<]*)<\/title>/i)?.[1],
+			description: meta("og:description") ?? meta("description"),
+			image: meta("og:image"),
+		};
+	} catch {
+		return {};
+	}
+}
+
+const og = await fetchOpenGraph(props.url);
+const hostname = new URL(props.url).hostname.replace(/^www\./, "");
+const title = props.title ?? og.title ?? hostname;
+const description = props.description ?? og.description;
+const image = props.image ?? og.image;
+---
+
+<a class="lc not-prose" href={props.url}>
+	{image && (
+		<img class="lc__image" src={image} alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />
+	)}
+	<div class="lc__body">
+		<span class="lc__title">{title}</span>
+		{description && <span class="lc__desc">{description}</span>}
+		<span class="lc__domain">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+				<circle cx="12" cy="12" r="9"></circle>
+				<path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"></path>
+			</svg>
+			{hostname}
+		</span>
+	</div>
+</a>
+
+<style>
+	.lc {
+		display: flex;
+		flex-direction: column;
+		margin: 1.5rem 0;
+		border: 1px solid #232838;
+		border-radius: 0.5rem;
+		background: #0b0e16;
+		color: #e6e9f2;
+		text-decoration: none;
+		overflow: hidden;
+		transition: border-color 150ms ease;
+	}
+
+	.lc:hover {
+		border-color: #3a4154;
+	}
+
+	.lc__body {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+		flex: 1;
+		min-width: 0;
+		padding: 0.8rem 0.95rem;
+	}
+
+	.lc__title {
+		color: #e6e9f2;
+		font-family: var(--aw-font-sans, ui-sans-serif, system-ui, sans-serif);
+		font-size: 0.95rem;
+		font-weight: 600;
+		line-height: 1.35;
+	}
+
+	.lc__desc {
+		color: #8b93a7;
+		font-family: var(--aw-font-sans, ui-sans-serif, system-ui, sans-serif);
+		font-size: 0.8rem;
+		line-height: 1.5;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	.lc__domain {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		margin-top: auto;
+		padding-top: 0.35rem;
+		color: #6b7488;
+		font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", monospace;
+		font-size: 0.7rem;
+	}
+
+	.lc__domain svg {
+		width: 0.85rem;
+		height: 0.85rem;
+		flex-shrink: 0;
+	}
+
+	/* Full-width image strip at its natural aspect ratio — nothing cropped. */
+	.lc__image {
+		display: block;
+		width: 100%;
+		height: auto;
+		border-bottom: 1px solid #232838;
+	}
+</style>

@@ -1,0 +1,806 @@
+---
+/**
+ * AgentSession — a mocked coding-agent session in the opencode TUI visual
+ * language. Reusable anywhere: pass a prompt, an entries script, and optional
+ * session stats. The reader sends the first prompt (click / ↵ on the input),
+ * and the transcript then plays out: the prompt becomes a left-bordered user
+ * panel, tool calls appear as spinner rows that resolve into ▸ command
+ * messages with streamed output, reasoning collapses to "- Thought: …" lines,
+ * and the message ends with the "▣ Build · model · duration" footer.
+ *
+ * Rendering follows opencode's session components (packages/tui): UserMessage
+ * (left split border + backgroundPanel), Shell tools (spinner while running),
+ * ReasoningPart (amber thought line), and the AssistantMessage end line. The
+ * status bar tracks the current action with a spinner plus a ticking
+ * token/cost counter.
+ *
+ * Entries are typed:
+ *   cmd  — the agent runs a tool; following `out` entries attach to it
+ *   out  — output line of the current tool (tone model as in TerminalDemo)
+ *   note — agent reasoning, rendered as an amber "Thought" line
+ *   say  — assistant prose
+ *
+ * Hidden content is display:none so the pane grows as the session plays;
+ * it only follows the bottom while the reader is there. Replay resets to
+ * the pre-send state; reduced motion reveals everything on submit. All
+ * output is mocked — nothing runs.
+ */
+type Tone = "default" | "danger" | "success" | "dim" | "bold";
+type Part = { text: string; tone?: Tone };
+
+type Entry =
+	| { type: "cmd"; text: string }
+	| { type: "out"; text?: string; tone?: Tone; parts?: Part[] }
+	| { type: "note"; text: string; tone?: Tone }
+	| { type: "say"; text: string };
+
+interface Props {
+	prompt: string;
+	entries: Entry[];
+	model?: string;
+	duration?: string;
+	tokens?: number;
+	cost?: number;
+}
+
+const {
+	prompt,
+	entries,
+	model = "samicode/mock-1",
+	duration = "2m 04s",
+	tokens = 0,
+	cost = 0,
+} = Astro.props;
+
+// Group the flat entries into render segments: a tool block per cmd (with its
+// out lines), plus standalone thought/prose segments. Empty-string parts are
+// dropped (Astro renders `{""}` as a stray text node).
+type Segment =
+	| { kind: "tool"; cmd: string; outs: Part[][] }
+	| { kind: "thought"; text: string; tone?: Tone }
+	| { kind: "say"; text: string };
+
+// The banner: "samicode" in a ░-separated block font, split two-tone like
+// opencode's Logo — "sami" dim, "code" bright+bold. Rows are flex so the
+// whitespace-only text nodes Astro emits between mapped elements are dropped.
+const LOGO_ROWS: Array<[dim: string, bright: string]> = [
+	["░█▀▀░█▀█░█▄█░▀█▀", "░█▀▀░█▀█░█▀▄░█▀▀"],
+	["░▀▀█░█▀█░█░█░░█░", "░█░░░█░█░█░█░█▀▀"],
+	["░▀▀▀░▀░▀░▀░▀░▀▀▀", "░▀▀▀░▀▀▀░▀▀░░▀▀▀"],
+];
+
+const segments: Segment[] = [];
+for (const entry of entries) {
+	if (entry.type === "cmd") {
+		segments.push({ kind: "tool", cmd: entry.text, outs: [] });
+	} else if (entry.type === "out") {
+		const parts =
+			entry.parts ?? [{ text: entry.text ?? "", tone: entry.tone }];
+		const filtered = parts.filter((p) => p.text !== "");
+		const last = segments[segments.length - 1];
+		if (last?.kind === "tool" && filtered.length > 0) {
+			last.outs.push(filtered);
+		}
+	} else if (entry.type === "note") {
+		segments.push({ kind: "thought", text: entry.text, tone: entry.tone });
+	} else {
+		segments.push({ kind: "say", text: entry.text });
+	}
+}
+---
+
+<div
+	class="oc not-prose"
+	data-session
+	data-model={model}
+	data-tokens={tokens}
+	data-cost={cost}
+>
+	<div class="oc__head">
+		<div class="oc__logo" aria-label="samicode">
+			{LOGO_ROWS.map(([dim, bright]) => (
+				<div class="lg-row">
+					<span class="lg-half is-dim">{dim}</span>
+					<span class="lg-half is-bright">{bright}</span>
+				</div>
+			))}
+		</div>
+		<button class="oc__replay" type="button" data-replay hidden>
+			<span>Replay</span>
+		</button>
+	</div>
+
+	<div class="oc__scroll" data-scroll>
+		<button class="oc__input" type="button" data-input aria-label={`Send the prompt: ${prompt}`}>
+			<span class="oc__input-mark" aria-hidden="true">&gt;</span>
+			<span class="oc__prompt">{prompt}</span><span class="oc__caret" data-caret aria-hidden="true"></span>
+			<span class="oc__input-hint" aria-hidden="true">↵ send</span>
+		</button>
+
+		<div class="oc__user" data-user hidden>
+			<span class="oc__user-text">{prompt}</span>
+		</div>
+
+		<div class="oc__stream">
+			{segments.map((seg, i) => {
+				if (seg.kind === "tool") {
+					return (
+						<div class="oc__seg oc__tool" data-seg data-index={i}>
+							<div class="oc__runrow" data-runrow>
+								<span class="oc__spin" aria-hidden="true">⠋</span>
+								<span class="oc__runcmd">{seg.cmd}</span>
+							</div>
+							<div class="oc__cmdrow" data-cmdrow>
+								<span class="oc__mark" aria-hidden="true">▸</span>
+								<span class="oc__cmdtext">{seg.cmd}</span>
+							</div>
+							{seg.outs.map((parts, j) => (
+								<div class="oc__out" data-out data-out-index={j}>{parts.map((part) => (<span class:list={["t", part.tone ? `is-${part.tone}` : ""]}>{part.text}</span>))}</div>
+							))}
+						</div>
+					);
+				}
+				if (seg.kind === "thought") {
+					return (
+						<div class:list={["oc__seg oc__thought", seg.tone === "success" ? "is-success" : undefined]} data-seg data-index={i}>
+							- Thought: {seg.text}
+						</div>
+					);
+				}
+				return (
+					<div class="oc__seg oc__say" data-seg data-index={i}>{seg.text}</div>
+				);
+			})}
+			<div class="oc__seg oc__end" data-end>
+				<span class="oc__end-mark" aria-hidden="true">▣</span> Build · {model} · {duration}
+			</div>
+		</div>
+	</div>
+
+	<div class="oc__status">
+		<span class="oc__status-left">
+			<span class="oc__spin oc__status-spin" data-spinner></span>
+			<span data-task></span>
+		</span>
+		<span class="oc__status-right">
+			<span data-model-label>{model}</span>
+			&nbsp;·&nbsp; <span data-tokens>0</span> tok &nbsp;·&nbsp; $<span data-cost>0.0000</span>
+		</span>
+	</div>
+</div>
+
+<style>
+	.oc {
+		--oc-bg: #0b0e16;
+		--oc-panel: #11151f;
+		--oc-border: #232838;
+		--oc-text: #e6e9f2;
+		--oc-muted: #8b93a7;
+		--oc-dimmer: #6b7488;
+		--oc-green: #5fe6ad;
+		--oc-amber: #d9b06a;
+		--oc-red: #f5a088;
+
+		margin: 1.5rem 0;
+		border: 1px solid var(--oc-border);
+		border-radius: 0.5rem;
+		background: var(--oc-bg);
+		color: var(--oc-text);
+		font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", monospace;
+		font-size: 0.8rem;
+		overflow: hidden;
+	}
+
+	/* Header: opencode's exact banner art + Replay. Rows are flex so the
+	   whitespace-only text nodes Astro emits between mapped chars are
+	   dropped; each char cell preserves its own width. */
+	.oc__head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.7rem 0.9rem 0.6rem;
+		border-bottom: 1px solid var(--oc-border);
+	}
+
+	.oc__logo {
+		display: flex;
+		flex-direction: column;
+		font-family: inherit;
+		font-size: 0.7rem;
+		line-height: 1.15;
+		min-width: 0;
+	}
+
+	.lg-row {
+		display: flex;
+		gap: 1ch;
+	}
+
+	.lg-half {
+		white-space: pre;
+	}
+
+	/* Two halves, two tones — "sami" dim, "code" bright+bold, like
+	   opencode's Logo component (left: textMuted, right: text + bold). */
+	.lg-half.is-dim {
+		color: var(--oc-muted);
+	}
+
+	.lg-half.is-bright {
+		color: var(--oc-text);
+		font-weight: 700;
+	}
+
+	.oc__replay {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.2rem 0.6rem;
+		background: var(--oc-panel);
+		border: 1px solid #2a3142;
+		border-radius: 0.35rem;
+		color: #c7ccd9;
+		font: inherit;
+		font-size: 0.7rem;
+		cursor: pointer;
+		flex-shrink: 0;
+		transition:
+			background-color 0.15s,
+			border-color 0.15s,
+			color 0.15s;
+	}
+
+	.oc__replay:hover {
+		border-color: #3a4154;
+		color: #f3f5fb;
+	}
+
+	/* display:inline-flex above would override the hidden attribute. */
+	.oc__replay[hidden] {
+		display: none;
+	}
+
+	.oc__scroll {
+		max-height: 34rem;
+		overflow-y: auto;
+		padding: 0.7rem 0.9rem;
+	}
+
+	/* The prompt input (opencode's Prompt box): full border, > mark, caret.
+	   On send it is replaced by the user message panel in the transcript. */
+	.oc__input {
+		display: flex;
+		align-items: baseline;
+		gap: 0.5rem;
+		width: 100%;
+		padding: 0.55rem 0.7rem;
+		border: 1px solid #2a3142;
+		border-radius: 0.45rem;
+		background: var(--oc-panel);
+		font: inherit;
+		text-align: left;
+		cursor: pointer;
+		transition: border-color 200ms ease;
+	}
+
+	.oc__input:hover {
+		border-color: #3a4154;
+	}
+
+	.oc__input:focus-visible {
+		outline: 2px solid var(--oc-green);
+		outline-offset: 1px;
+	}
+
+	.oc__input[hidden] {
+		display: none;
+	}
+
+	.oc__input-mark {
+		color: var(--oc-green);
+		user-select: none;
+		flex-shrink: 0;
+	}
+
+	.oc__prompt {
+		color: var(--oc-text);
+		white-space: pre-wrap;
+		word-break: break-word;
+	}
+
+	.oc__input-hint {
+		margin-left: auto;
+		padding-left: 0.75rem;
+		color: var(--oc-dimmer);
+		flex-shrink: 0;
+	}
+
+	.oc__caret {
+		display: inline-block;
+		width: 0.45em;
+		height: 1.1em;
+		background: var(--oc-green);
+		vertical-align: text-bottom;
+		animation: oc-caret 600ms steps(1) infinite;
+	}
+
+	.oc__caret[data-hidden] {
+		display: none;
+	}
+
+	/* The sent prompt, opencode's UserMessage: left split border +
+	   backgroundPanel, padded. */
+	.oc__user {
+		display: flex;
+		margin-top: 0.65rem;
+		border-left: 2px solid var(--oc-green);
+	}
+
+	.oc__user[hidden] {
+		display: none;
+	}
+
+	.oc__user-text {
+		padding: 0.55rem 0.8rem;
+		background: var(--oc-panel);
+		color: var(--oc-text);
+		flex: 1;
+		white-space: pre-wrap;
+		word-break: break-word;
+	}
+
+	.oc__stream {
+		display: flex;
+		flex-direction: column;
+	}
+
+	/* Hidden segments take no space — the pane only ever scrolls over text
+	   that has actually appeared. */
+	/* Hidden segments take no space — the pane only ever scrolls over text
+	   that has actually appeared. Tool wrappers manage visibility through
+	   their children (runrow → cmdrow → outs). */
+	.oc__thought:not([data-shown]),
+	.oc__say:not([data-shown]),
+	.oc__runrow:not([data-shown]),
+	.oc__cmdrow:not([data-shown]),
+	.oc__out:not([data-shown]),
+	.oc__end:not([data-shown]) {
+		display: none;
+	}
+
+	.oc__seg[data-shown],
+	.oc__runrow[data-shown],
+	.oc__cmdrow[data-shown],
+	.oc__out[data-shown],
+	.oc__end[data-shown] {
+		animation: oc-in 130ms ease;
+	}
+
+	@keyframes oc-in {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+
+	/* Tool call, running state: spinner + command. */
+	.oc__runrow {
+		display: flex;
+		align-items: baseline;
+		gap: 0.5rem;
+		margin-top: 0.55rem;
+		padding-left: 0.9rem;
+		color: var(--oc-text);
+	}
+
+	.oc__spin {
+		color: var(--oc-green);
+		flex-shrink: 0;
+	}
+
+	.oc__runcmd {
+		white-space: pre-wrap;
+		word-break: break-word;
+	}
+
+	/* Tool call, as a message: ▸ command with its output directly under it,
+	   first-class transcript entries (tools stay visible — the demo runs in
+	   opencode's "show details" mode permanently). */
+	.oc__cmdrow {
+		display: flex;
+		align-items: baseline;
+		gap: 0.5rem;
+		margin-top: 0.55rem;
+		padding-left: 0.9rem;
+		color: var(--oc-text);
+	}
+
+	.oc__cmdrow[data-shown] {
+		font-weight: 500;
+	}
+
+	.oc__mark {
+		color: var(--oc-green);
+		user-select: none;
+		flex-shrink: 0;
+	}
+
+	.oc__cmdtext {
+		white-space: pre-wrap;
+		word-break: break-word;
+	}
+
+	.oc__out {
+		color: #c7ccd9;
+		white-space: pre-wrap;
+		word-break: break-word;
+		padding-left: 1.9rem;
+	}
+
+	.oc__out[data-active]::after {
+		content: "";
+		display: inline-block;
+		width: 0.45em;
+		height: 1.1em;
+		margin-left: 3px;
+		background: var(--oc-green);
+		vertical-align: text-bottom;
+		animation: oc-caret 600ms steps(1) infinite;
+	}
+
+	@keyframes oc-caret {
+		0%, 50% { opacity: 1; }
+		51%, 100% { opacity: 0; }
+	}
+
+	/* Reasoning, opencode's ReasoningPart: amber "- Thought: … · 6s" line. */
+	.oc__thought {
+		margin-top: 0.55rem;
+		padding-left: 0.9rem;
+		color: var(--oc-amber);
+		white-space: pre-wrap;
+		word-break: break-word;
+	}
+
+	.oc__thought.is-success {
+		color: var(--oc-green);
+	}
+
+	/* Assistant prose, opencode's TextPart. */
+	.oc__say {
+		margin-top: 0.55rem;
+		padding-left: 0.9rem;
+		color: var(--oc-text);
+		font-family: var(--aw-font-sans, ui-sans-serif, system-ui, sans-serif);
+		font-size: 0.82rem;
+		line-height: 1.5;
+	}
+
+	/* Message end line: "▣ Build · model · duration". */
+	.oc__end {
+		margin-top: 0.55rem;
+		margin-bottom: 0.65rem;
+		padding-left: 0.9rem;
+		color: var(--oc-muted);
+	}
+
+	.oc__end-mark {
+		color: var(--oc-green);
+	}
+
+	/* Scoped (not :global): the part spans live in this template, and a
+	   global rule would override TerminalDemo's own .t tones page-wide —
+	   with --oc-* vars that don't resolve there, greying them out. */
+	.t.is-success {
+		color: var(--oc-green);
+	}
+	.t.is-danger {
+		color: var(--oc-red);
+	}
+	.t.is-dim {
+		color: var(--oc-muted);
+	}
+	.t.is-bold {
+		color: #f3f5fb;
+		font-weight: 600;
+	}
+
+	/* Status bar: spinner + current action, model and running counters. */
+	.oc__status {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.4rem 0.9rem;
+		border-top: 1px solid var(--oc-border);
+		color: var(--oc-muted);
+		font-size: 0.68rem;
+		white-space: nowrap;
+		overflow: hidden;
+	}
+
+	.oc__status-left {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+		min-width: 0;
+	}
+
+	.oc__status-left [data-task] {
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.oc__status-spin {
+		color: var(--oc-green);
+	}
+
+	.oc__status-right {
+		flex-shrink: 0;
+		color: var(--oc-dimmer);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.oc__caret,
+		.oc__out[data-active]::after {
+			animation: none;
+		}
+
+		.oc__seg[data-shown],
+		.oc__runrow[data-shown],
+		.oc__cmdrow[data-shown],
+		.oc__out[data-shown],
+		.oc__end[data-shown] {
+			animation: none;
+		}
+	}
+</style>
+
+<script>
+	const SEND_MS = 480; // beat after ↵ before the agent starts working
+	const RUN_MS = 650; // spinner row before a tool's block resolves
+	const OUT_MS = 70; // pause between output lines
+	const GAP_MS = 550; // pause between segments (thoughts, prose)
+	const SPIN_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+	const BOTTOM_SLACK = 32; // px — still "at the bottom" within this
+
+	function prefersReducedMotion(): boolean {
+		return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+	}
+
+	function setupSession(root: HTMLElement) {
+		const scroll = root.querySelector<HTMLElement>("[data-scroll]");
+		const replayBtn = root.querySelector<HTMLButtonElement>("[data-replay]");
+		const input = root.querySelector<HTMLButtonElement>("[data-input]");
+		const user = root.querySelector<HTMLElement>("[data-user]");
+		const caret = root.querySelector<HTMLElement>("[data-caret]");
+		const spinner = root.querySelector<HTMLElement>("[data-spinner]");
+		const taskLabel = root.querySelector<HTMLElement>("[data-task]");
+		const tokensEl = root.querySelector<HTMLElement>("[data-tokens]");
+		const costEl = root.querySelector<HTMLElement>("[data-cost]");
+		const endLine = root.querySelector<HTMLElement>("[data-end]");
+		const segments = Array.from(
+			root.querySelectorAll<HTMLElement>("[data-seg]"),
+		);
+		if (
+			!scroll || !replayBtn || !input || !user || !caret || !spinner ||
+			!taskLabel || !tokensEl || !costEl || !endLine || segments.length === 0
+		) {
+			return;
+		}
+
+		const finalTokens = Number(root.dataset.tokens ?? "0");
+		const finalCost = Number(root.dataset.cost ?? "0");
+
+		let timers: number[] = [];
+		let raf: number | undefined;
+		let spinTimer: number | undefined;
+		let playing = false;
+
+		function clearAll() {
+			for (const t of timers) window.clearTimeout(t);
+			timers = [];
+			if (raf) cancelAnimationFrame(raf);
+			if (spinTimer) window.clearInterval(spinTimer);
+			raf = undefined;
+			spinTimer = undefined;
+		}
+
+		function schedule(fn: () => void, ms: number): number {
+			const t = window.setTimeout(fn, ms);
+			timers.push(t);
+			return t;
+		}
+
+		function setCounters(frac: number) {
+			tokensEl.textContent = Math.round(frac * finalTokens).toLocaleString();
+			costEl.textContent = (frac * finalCost).toFixed(4);
+		}
+
+		function startSpinners() {
+			let frame = 0;
+			for (const el of root.querySelectorAll<HTMLElement>(".oc__spin")) {
+				if (el.textContent === "✓") continue;
+			}
+			const set = () => {
+				for (const el of root.querySelectorAll<HTMLElement>("[data-live-spin] .oc__spin")) {
+					el.textContent = SPIN_FRAMES[frame];
+				}
+				spinner.textContent = SPIN_FRAMES[frame];
+				frame = (frame + 1) % SPIN_FRAMES.length;
+			};
+			set();
+			spinTimer = window.setInterval(set, 90);
+		}
+
+		function atBottom(): boolean {
+			return (
+				scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight <
+				BOTTOM_SLACK
+			);
+		}
+
+		function reset() {
+			clearAll();
+			for (const el of root.querySelectorAll("[data-shown]")) {
+				el.removeAttribute("data-shown");
+			}
+			for (const el of root.querySelectorAll("[data-active]")) {
+				el.removeAttribute("data-active");
+			}
+			for (const el of root.querySelectorAll("[data-live-spin]")) {
+				el.removeAttribute("data-live-spin");
+			}
+			for (const runrow of root.querySelectorAll<HTMLElement>("[data-runrow]")) {
+				runrow.style.display = "";
+			}
+			input.hidden = false;
+			user.hidden = true;
+			spinner.textContent = "";
+			taskLabel.textContent = "";
+			tokensEl.textContent = "0";
+			costEl.textContent = "0.0000";
+			scroll.scrollTop = 0;
+			root.removeAttribute("data-done");
+			replayBtn.hidden = true;
+		}
+
+		function revealEverything() {
+			caret.setAttribute("data-hidden", "");
+			input.hidden = true;
+			user.hidden = false;
+			for (const el of root.querySelectorAll(
+				"[data-seg], [data-cmdrow], [data-out], [data-end]",
+			)) {
+				(el as HTMLElement).setAttribute("data-shown", "");
+			}
+			for (const el of root.querySelectorAll("[data-runrow]")) {
+				(el as HTMLElement).style.display = "none";
+			}
+			spinner.textContent = "✓";
+			taskLabel.textContent = "";
+			setCounters(1);
+			scroll.scrollTop = scroll.scrollHeight;
+		}
+
+		function play() {
+			if (playing) return;
+			playing = true;
+			input.hidden = true;
+			user.hidden = false;
+			taskLabel.textContent = "";
+
+			if (prefersReducedMotion()) {
+				revealEverything();
+				finish();
+				return;
+			}
+
+			// ↵ send — the prompt becomes the user panel and work begins.
+			let at = SEND_MS;
+			schedule(() => startSpinners(), at);
+
+			// Each segment plays out: a tool spins on its runrow, then resolves
+			// to its block and streams output; thoughts and prose just appear.
+			for (const seg of segments) {
+				const isTool = seg.querySelector("[data-runrow]") !== null;
+				at += isTool ? RUN_MS : GAP_MS;
+				const revealAt = at;
+				const cmdText = seg.querySelector(".oc__runcmd")?.textContent ?? "";
+
+				schedule(() => {
+					const stick = atBottom();
+					if (isTool) {
+						const runrow = seg.querySelector<HTMLElement>("[data-runrow]")!;
+						runrow.setAttribute("data-shown", "");
+						runrow.setAttribute("data-live-spin", "");
+						taskLabel.textContent = cmdText;
+					} else {
+						seg.setAttribute("data-shown", "");
+					}
+					if (stick) scroll.scrollTop = scroll.scrollHeight;
+				}, revealAt);
+
+				if (!isTool) continue;
+
+				// The spinner row resolves to the ▸ command message.
+				at += RUN_MS;
+				const cmdAt = at;
+				schedule(() => {
+					const stick = atBottom();
+					const runrow = seg.querySelector<HTMLElement>("[data-runrow]")!;
+					const cmdrow = seg.querySelector<HTMLElement>("[data-cmdrow]")!;
+					runrow.removeAttribute("data-live-spin");
+					runrow.style.display = "none";
+					cmdrow.setAttribute("data-shown", "");
+					if (stick) scroll.scrollTop = scroll.scrollHeight;
+				}, cmdAt);
+
+				const outs = Array.from(
+					seg.querySelectorAll<HTMLElement>("[data-out]"),
+				);
+				for (const out of outs) {
+					at += OUT_MS;
+					const outAt = at;
+					schedule(() => {
+						const stick = atBottom();
+						for (const other of outs) other.removeAttribute("data-active");
+						out.setAttribute("data-shown", "");
+						out.setAttribute("data-active", "");
+						if (stick) scroll.scrollTop = scroll.scrollHeight;
+					}, outAt);
+				}
+				at += OUT_MS * 2;
+				schedule(() => {
+					for (const out of outs) out.removeAttribute("data-active");
+				}, at);
+			}
+
+			// The message end line, then done.
+			const endStart = at;
+			at += GAP_MS;
+			schedule(() => {
+				const stick = atBottom();
+				endLine.setAttribute("data-shown", "");
+				if (stick) scroll.scrollTop = scroll.scrollHeight;
+			}, at);
+
+			const duration = at - endStart + GAP_MS;
+			const startStamp = performance.now() + SEND_MS;
+			const tick = () => {
+				const elapsed = performance.now() - startStamp;
+				const frac = Math.max(0, Math.min(1, elapsed / at));
+				setCounters(frac);
+				if (frac < 1) raf = requestAnimationFrame(tick);
+			};
+			raf = requestAnimationFrame(tick);
+
+			schedule(() => {
+				if (spinTimer) window.clearInterval(spinTimer);
+				spinner.textContent = "✓";
+				taskLabel.textContent = "";
+				setCounters(1);
+				finish();
+			}, at + OUT_MS * 2);
+		}
+
+		function finish() {
+			playing = false;
+			root.setAttribute("data-done", "");
+			replayBtn.hidden = false;
+		}
+
+		input.addEventListener("click", play);
+		replayBtn.addEventListener("click", reset);
+
+		document.addEventListener(
+			"astro:before-swap",
+			() => {
+				clearAll();
+			},
+			{ once: true },
+		);
+	}
+
+	document
+		.querySelectorAll<HTMLElement>("[data-session]")
+		.forEach((root) => setupSession(root));
+</script>
