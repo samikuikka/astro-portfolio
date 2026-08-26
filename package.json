@@ -37,5 +37,5 @@
     "postcss": "^8.5.6",
     "prettier-plugin-astro": "^0.14.1"
   },
-  "packageManager": "pnpm@11.3.0"
+  "packageManager": "pnpm@11.3.0+sha512-LEA9ZZRScodnKx9wVjQ6H3w2NANqZ/+r/MKz11ldhDdo+HhxSNG1fPeVbJBga70ZKFfDY68Z6W0tDsnsV0HSFQ=="
 }
