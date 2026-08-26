@@ -45,15 +45,39 @@ const scrimSvg = Buffer.from(`<svg width="${WIDTH}" height="${HEIGHT}" xmlns="ht
   <rect width="${WIDTH}" height="${HEIGHT}" fill="url(#s)"/>
 </svg>`);
 
+// Lighter scrim for intrinsically dark covers (diagrams on navy/black):
+// brighten the cover first, then only shade the title zone instead of the
+// whole card — otherwise the share card reads as a black rectangle in
+// dark-mode chats.
+const scrimSvgLight = Buffer.from(`<svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="s" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#04030a" stop-opacity="0.90"/>
+      <stop offset="0.45" stop-color="#04030a" stop-opacity="0.68"/>
+      <stop offset="1" stop-color="#04030a" stop-opacity="0.34"/>
+    </linearGradient>
+  </defs>
+  <rect width="${WIDTH}" height="${HEIGHT}" fill="url(#s)"/>
+</svg>`);
+
 const prepareBackground = async (
   coverAbsPath: string,
   slug: string
 ): Promise<string | undefined> => {
   const outPath = path.join(BG_CACHE_DIR, `${slug}.png`);
   try {
-    await sharp(coverAbsPath)
-      .resize(WIDTH, HEIGHT, { fit: "cover" })
-      .composite([{ input: scrimSvg }])
+    // Adaptive treatment: dark covers get brightened and the lighter scrim;
+    // light covers keep the full-strength scrim for title contrast.
+    const { channels } = await sharp(coverAbsPath).stats();
+    const mean =
+      (channels[0].mean + channels[1].mean + channels[2].mean) / 3;
+    const dark = mean < 70;
+
+    let pipeline = sharp(coverAbsPath).resize(WIDTH, HEIGHT, { fit: "cover" });
+    if (dark) pipeline = pipeline.modulate({ brightness: 1.5 });
+
+    await pipeline
+      .composite([{ input: dark ? scrimSvgLight : scrimSvg }])
       .png()
       .toFile(outPath);
     return outPath;
