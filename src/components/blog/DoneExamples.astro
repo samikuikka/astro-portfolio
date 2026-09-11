@@ -1,0 +1,301 @@
+---
+/**
+ * DoneExamples — one definition of done, in its two real forms.
+ *
+ * Principle 1 says humans define done before the loop starts, but "definition
+ * of done" is abstract until you see one. This figure shows a single small
+ * task (orders CSV export) defined twice: on the left the spec as written in
+ * human words, on the right the same done as an apo test the environment can
+ * run. Same task, same destination — one form talks to people, the other
+ * talks to the loop.
+ *
+ * Static, no interaction. Same idiom as Formula: self-themed dark panel,
+ * not-prose, pairs with the post's other widgets.
+ */
+---
+
+<figure class="dod not-prose" data-done-examples>
+	<figcaption class="dod__sr-only">
+		One definition of done in two forms. Left, a spec written in human
+		words: the orders table gets an Export CSV button, clicking downloads
+		the currently visible rows with filters applied, columns match the
+		table, dates are ISO 8601, amounts are plain numbers, and exporting
+		10,000 rows must not freeze the page; everything else is left to the
+		agent. Right, the same done as an apo test with four named checks:
+		the button exists, the file name matches the expected shape, the rows
+		respect the filters, and a judge verifies the contents.
+	</figcaption>
+
+	<div class="dod__grid">
+		<div class="dod__card dod__card--spec">
+			<div class="dod__tab">
+				<span class="dod__file">export-orders.spec.md</span>
+				<span class="dod__tag dod__tag--human">spec</span>
+			</div>
+			<div class="dod__body dod__body--spec">
+				<p class="dod__h">done when</p>
+				<ul class="dod__list">
+					<li>the orders table gets an <em>Export CSV</em> button, top right</li>
+					<li>clicking it downloads <code>orders-&lt;date&gt;.csv</code> — the rows currently visible, filters applied</li>
+					<li>columns and their order match the table</li>
+					<li>dates ISO 8601, amounts plain numbers, no thousand separators</li>
+					<li>exporting 10k rows doesn't freeze the page</li>
+				</ul>
+				<p class="dod__h dod__h--out">left to the agent</p>
+				<p class="dod__note">everything above that — implementation, library, code structure</p>
+			</div>
+		</div>
+
+		<span class="dod__arrow" aria-hidden="true">→</span>
+
+		<div class="dod__card dod__card--eval">
+			<div class="dod__tab">
+				<span class="dod__file">export-orders.eval.ts</span>
+				<span class="dod__tag dod__tag--run">apo test</span>
+			</div>
+			<div class="dod__body dod__body--eval">
+				<div class="dod__t">
+					<span class="dod__l"><span class="c-k">test</span>(<span class="c-s">"export-button-visible"</span>, (t) <span class="c-k">=&gt;</span> <span class="c-b">&#123;</span></span>
+					<span class="dod__l dod__l--in">t.<span class="c-f">selectorExists</span>(<span class="c-s">"button"</span>, <span class="c-b">&#123;</span> text: <span class="c-s">"Export CSV"</span> <span class="c-b">&#125;</span>);</span>
+					<span class="dod__l"><span class="c-b">&#125;);</span></span>
+				</div>
+				<div class="dod__t">
+					<span class="dod__l"><span class="c-k">test</span>(<span class="c-s">"file-shape"</span>, (t, <span class="c-b">&#123;</span> deliverables <span class="c-b">&#125;</span>) <span class="c-k">=&gt;</span> <span class="c-b">&#123;</span></span>
+					<span class="dod__l dod__l--in">t.<span class="c-f">check</span>(deliverables.file, <span class="c-f">matches</span>(<span class="c-s">/orders-\d&#123;4&#125;-\d&#123;2&#125;-\d&#123;2&#125;\.csv/</span>));</span>
+					<span class="dod__l"><span class="c-b">&#125;);</span></span>
+				</div>
+				<div class="dod__t">
+					<span class="dod__l"><span class="c-k">test</span>(<span class="c-s">"rows-respect-filters"</span>, (t, <span class="c-b">&#123;</span> deliverables <span class="c-b">&#125;</span>) <span class="c-k">=&gt;</span> <span class="c-b">&#123;</span></span>
+					<span class="dod__l dod__l--in">t.<span class="c-f">check</span>(deliverables.rows, <span class="c-f">equalsVisibleRows</span>());</span>
+					<span class="dod__l"><span class="c-b">&#125;);</span></span>
+				</div>
+				<div class="dod__t">
+					<span class="dod__l"><span class="c-k">test</span>(<span class="c-s">"contents-honest"</span>, <span class="c-k">async</span> (t, <span class="c-b">&#123;</span> deliverables <span class="c-b">&#125;</span>) <span class="c-k">=&gt;</span> <span class="c-b">&#123;</span></span>
+					<span class="dod__l dod__l--in"><span class="c-k">await</span> t.<span class="c-f">judge</span>(deliverables.contents, <span class="c-s">"PASS when columns match the table, dates ISO 8601, amounts unformatted."</span>);</span>
+					<span class="dod__l"><span class="c-b">&#125;);</span></span>
+				</div>
+			</div>
+		</div>
+	</div>
+</figure>
+
+<style>
+	.dod {
+		margin: 2rem auto;
+		max-width: 46rem;
+		padding: 1rem;
+		border: 1px solid #404040;
+		border-radius: 0.5rem;
+		background: #0d0d0d;
+		color: #f4f4f5;
+		font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", monospace;
+	}
+
+	.dod__sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	.dod__grid {
+		display: grid;
+		grid-template-columns: 1fr 1.5rem 1fr;
+		align-items: stretch;
+		gap: 0.25rem;
+	}
+
+	.dod__arrow {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: #767f96;
+		font-size: 0.9rem;
+	}
+
+	.dod__card {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		border: 1px solid #404040;
+		border-radius: 0.4rem;
+		background: #111111;
+		overflow: hidden;
+	}
+
+	/* Tab bar: filename + form tag. Amber = human words, green = runnable. */
+	.dod__tab {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		padding: 0.45rem 0.6rem;
+		border-bottom: 1px solid #262626;
+		background: #171717;
+	}
+
+	.dod__file {
+		overflow: hidden;
+		color: #d4d4d4;
+		font-size: 0.66rem;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.dod__tag {
+		flex-shrink: 0;
+		padding: 0.1rem 0.4rem;
+		border-radius: 0.25rem;
+		font-size: 0.55rem;
+		font-weight: 600;
+		letter-spacing: 0.07em;
+		text-transform: uppercase;
+	}
+
+	.dod__tag--human {
+		border: 1px solid #b98c45;
+		color: #d9b06a;
+	}
+
+	.dod__tag--run {
+		border: 1px solid #2a4a38;
+		color: #4ade80;
+	}
+
+	/* ── spec side: prose ────────────────────────────────────────────── */
+
+	.dod__body--spec {
+		flex: 1;
+		padding: 0.7rem 0.75rem 0.8rem;
+		font-family: var(--aw-font-sans, ui-sans-serif, system-ui, sans-serif);
+	}
+
+	.dod__h {
+		margin: 0 0 0.35rem;
+		color: #a3a3a3;
+		font-size: 0.6rem;
+		font-weight: 600;
+		letter-spacing: 0.09em;
+		text-transform: uppercase;
+	}
+
+	.dod__h--out {
+		margin-top: 0.75rem;
+		color: #737373;
+	}
+
+	.dod__list {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+	}
+
+	.dod__list li {
+		position: relative;
+		padding-left: 0.85rem;
+		color: #f4f4f5;
+		font-size: 0.78rem;
+		line-height: 1.45;
+	}
+
+	.dod__list li::before {
+		content: "–";
+		position: absolute;
+		left: 0;
+		color: #737373;
+	}
+
+	.dod__list em {
+		color: #fafafa;
+		font-style: normal;
+		font-weight: 600;
+	}
+
+	.dod__list code {
+		color: #4ade80;
+		font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", monospace;
+		font-size: 0.72rem;
+	}
+
+	.dod__note {
+		margin: 0;
+		color: #a3a3a3;
+		font-size: 0.72rem;
+		line-height: 1.45;
+	}
+
+	/* ── eval side: code ─────────────────────────────────────────────── */
+
+	.dod__body--eval {
+		flex: 1;
+		padding: 0.7rem 0.75rem 0.8rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.6rem;
+	}
+
+	/* One test block per row; each line is a block span so spacing comes
+	   from CSS, never from source whitespace. */
+	.dod__t {
+		display: flex;
+		flex-direction: column;
+		gap: 0.1rem;
+	}
+
+	.dod__l {
+		display: block;
+		color: #d4d4d4;
+		font-size: 0.68rem;
+		line-height: 1.5;
+		white-space: pre-wrap;
+		word-break: break-word;
+		/* Continuation of a wrapped line aligns under the first character. */
+		padding-left: 1.1em;
+		text-indent: -1.1em;
+	}
+
+	.dod__l--in {
+		padding-left: 1.6em;
+	}
+
+	.dod__l--in.dod__l {
+		text-indent: 0;
+	}
+
+	/* Light manual highlighting: green strings and test names, dim
+	   keywords, near-white calls, muted punctuation. */
+	.dod__l .c-s {
+		color: #4ade80;
+	}
+
+	.dod__l .c-k {
+		color: #a3a3a3;
+	}
+
+	.dod__l .c-f {
+		color: #fafafa;
+	}
+
+	.dod__l .c-b {
+		color: #737373;
+	}
+
+	@media (max-width: 40rem) {
+		.dod__grid {
+			grid-template-columns: 1fr;
+			gap: 0.6rem;
+		}
+
+		.dod__arrow {
+			transform: rotate(90deg);
+		}
+	}
+</style>

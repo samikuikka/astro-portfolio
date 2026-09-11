@@ -1,0 +1,15 @@
+{
+  "name": "portfolio-remotion",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "render": "remotion render src/index.ts LoopEngineeringCover out/loop.mp4",
+    "still": "remotion still src/index.ts LoopEngineeringCover out/loop.png"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.410",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.410"
+  }
+}

@@ -5,6 +5,7 @@ import { getFormattedDate } from "~/utils/utils";
 
 import type { Post } from "~/types";
 import { Image } from "astro:assets";
+import { getPostVideoUrl } from "~/utils/postMedia";
 import TableOfContents from "./TableOfContents.astro";
 
 export interface Props {
@@ -13,6 +14,7 @@ export interface Props {
 }
 
 const { post } = Astro.props;
+const videoUrl = post.video ? getPostVideoUrl(post.id, post.video) : undefined;
 ---
 
 <section class="w-full py-8 sm:py-16 lg:py-20 relative">
@@ -73,7 +75,19 @@ const { post } = Astro.props;
       </p>
 
       {
-        post.image ? (
+        videoUrl ? (
+          <video
+            class="w-full max-w-full lg:max-w-[900px] mx-auto mb-6 sm:rounded-md bg-white dark:bg-slate-700"
+            src={videoUrl}
+            width={900}
+            height={506}
+            autoplay
+            loop
+            muted
+            playsinline
+            aria-hidden="true"
+          />
+        ) : post.image ? (
           <Image
             src={post.image}
             class="max-w-full lg:max-w-[900px] mx-auto mb-6 sm:rounded-md bg-white dark:bg-slate-700"
@@ -100,3 +114,15 @@ const { post } = Astro.props;
     </div>
   </article>
 </section>
+
+<script>
+  // Autoplaying cover videos are decoration; honor reduced-motion by pausing.
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    document
+      .querySelectorAll<HTMLVideoElement>("video[autoplay]")
+      .forEach((v) => {
+        v.removeAttribute("autoplay");
+        v.pause();
+      });
+  }
+</script>

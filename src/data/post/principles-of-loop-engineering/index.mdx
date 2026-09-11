@@ -1,0 +1,150 @@
+---
+publishDate: 2026-09-11T00:00:00Z
+title: "Principles of Loop Engineering"
+excerpt: "What needs to be true, to automate work to the agents, while knowing the output is what we wanted."
+image: "./loop.png"
+video: "./loop.mp4"
+tags:
+  - Loop Engineering
+  - Apo
+---
+
+import Formula from "../../../components/blog/Formula.astro";
+import Chain from "../../../components/blog/Chain.astro";
+import LoopInUse from "../../../components/blog/LoopInUse.astro";
+import DoneExamples from "../../../components/blog/DoneExamples.astro";
+import TerminalDemo from "../../../components/blog/TerminalDemo.astro";
+
+# Principles of Loop Engineering
+
+What properties need to be true before agent can work on a task autonomously?
+While the overall concept of agent working in the loop, many times the principles behind the loop engineering gets surprisingly small amount of discussion.
+
+And who wouldn't want to loop their agents. Doing work without needing manually checking agents work on every turn can be liberating, but only if we can trust the loop.
+
+So how do we trust the loop? This is the thing I want to discuss more, the things that make the loops actually deliver results, not how to setup script that loops your agent over and over. This can be translated into four principles, that together gives the confidence on the loop's result.
+
+
+##  Humans define done; agents find the path
+
+Agent doing the most of the work itself does often mean human has less work on the overall process. However! This makes humans work on the process even more important on the places where our judgement is needed.
+
+The first principle is related to that: for agent to work well, its instruction must be crystal clear. And this happens before even the loop starts, by creating the definition of done.
+
+It doesn't really matter on what you use the loop, the shape is the same. Expert (most likely you) creates a specification on what we want from the output. For normal coding task, it might be the outcome, how the system at the end should work. For harness it would be how we want agent to behave.
+
+But compared this to the waterfall specifications, this often doesn't always need to go into very specifics, agents are quite good working on problem without hand-waving every engineering decision at the start.
+
+Here's example of two very different definition of done's, one is for new feature development and it's spec, another one is changing the behaviour of the gaent with the tests.
+
+<DoneExamples />
+
+This needs to be saved on place where our agent can read and check for the whole process on what was the goal, where we are at now, and compare the current progress on the definition of done.
+
+Important thing here is that loop doesn't remove the human judgement, but moves it to the start of the process.
+
+## Done must be independently observable
+
+First mistake creating the loop is usually the ending.
+Not because agent did not do anything, but because agent writing
+"I've have implemented it successfully" is not really enough for the ending state.
+
+We need real evidence, as agents will eventually finish their work, and will say their work is done even if the outcome is not close to the version we could be happy with.
+
+So there must be something in the environment it can interrogate:
+
+<Chain
+  label="the evidence chain"
+  steps={[
+    { text: "code change" },
+    { text: "the environment answers", note: "browser / test / compiler / real execution" },
+    { text: "evidence" },
+  ]}
+  output="PASS / FAIL"
+/>
+
+This is the part that really makes us leave the loop, if the environment can give the evidence without us manually checking the output, we can let the agents to iterate until evidence shows PASS.
+
+Here's for example CLI command agent could use to check if acceptance tests pass for its work.
+
+<TerminalDemo
+  command="apo task run bug-triage"
+  lines={[
+    { parts: [{ text: "Executor: caller (recorded in a1b2c3d4)", tone: "dim" }] },
+    { parts: [{ text: "Revision: clean worktree 9f2c7d81e4b9 from github.com/acme/agent", tone: "dim" }] },
+    { text: "" },
+    { parts: [{ text: "PASS", tone: "success" }, { text: " bug-triage", tone: "bold" }] },
+    { parts: [{ text: "  Checks:", tone: "bold" }] },
+    { parts: [{ text: "    " }, { text: "PASS", tone: "success" }, { text: " analyzed-error-log" }] },
+    { parts: [{ text: "    " }, { text: "PASS", tone: "success" }, { text: " identified-both-error-types" }] },
+    { parts: [{ text: "    " }, { text: "PASS", tone: "success" }, { text: " distinguished-error-types" }] },
+    { parts: [{ text: "    " }, { text: "PASS", tone: "success" }, { text: " assigned-reasonable-severity" }] },
+    { parts: [{ text: "    " }, { text: "PASS", tone: "success" }, { text: " pointed-at-fix-area" }] },
+    { text: "" },
+    { parts: [{ text: "Run:     ", tone: "dim" }, { text: "run_7f6136238c171ace6881e25b", tone: "bold" }] },
+    { parts: [{ text: "Inspect: ", tone: "dim" }, { text: "apo runs show run_7f6136238c171ace6881e25b", tone: "dim" }] },
+  ]}
+/>
+
+And the word "independently" is really important on this.
+We don't want that in any part it needs us to get the evidence to the agent.
+For example, if it's human that needs to run that CLI command, we need human in every place agent needs evidence.
+
+## Failure must produce useful evidence
+
+It's not enough to tell that task failed, but the agent needs to also know the reasons why it failed.
+
+Here's how for exmaple test could tell what went wrong with the loop iteration.
+
+
+<TerminalDemo
+  command="apo task run bug-triage"
+  lines={[
+    { parts: [{ text: "Executor: caller (recorded in a1b2c3d4)", tone: "dim" }] },
+    { parts: [{ text: "Revision: clean worktree 9f2c7d81e4b9 from github.com/acme/agent", tone: "dim" }] },
+    { text: "" },
+    { parts: [{ text: "FAIL", tone: "danger" }, { text: " bug-triage", tone: "bold" }] },
+    { parts: [{ text: "  Checks:", tone: "bold" }] },
+    { parts: [{ text: "    " }, { text: "PASS", tone: "success" }, { text: " analyzed-error-log" }] },
+    { parts: [{ text: "    " }, { text: "FAIL", tone: "danger" }, { text: " distinguished-error-types" }] },
+    { parts: [{ text: "      " }, { text: "✗ judge", tone: "danger" }] },
+    { text: "        bug-triage.eval.ts:52:3", tone: "dim" },
+    { text: "        − Expected: TWO separate error types (TypeError in tax.js:45, RangeError in discount.js:28)", tone: "success" },
+    { text: "        + Received: errors in the order service", tone: "danger" },
+    { text: "" },
+    { parts: [{ text: "Run:     ", tone: "dim" }, { text: "run_de89cab0f1e2d3a4b5c6d7e8", tone: "bold" }] },
+    { parts: [{ text: "Inspect: ", tone: "dim" }, { text: "apo runs show run_de89cab0f1e2d3a4b5c6d7e8", tone: "dim" }] },
+  ]}
+/>
+
+If the failure itself is not automated to give useful signal to the coding agent, we need to be in the loop to give it.
+So when the system fails, agent must know exactly why it failed, and what needs to happen in order to iterate on the process.
+
+What is the evidence itself can change based on the task, for example compiler errors, failing end-to-end tests, or failing agent behaviour with acceptance testing. But the concept is always the same, give evidence on the failure and make it possible to address it with the environment.
+
+## The loop must converge on our goal
+
+Another mistake that can happen when trying to implement the loop is that the task did not converge towards our goal. When you need to check every iteration and say "Nah, this is not quite what I wanted. Change X", it more often says more about the mistakes in the specification and the evidence that the agent has than anything else.
+
+Removing human from the loop is the ultimate goal, the more autonomous the loop becomes, the more important is the quality of its acceptance criteria.
+
+People sometimes frame autonomy as:
+
+<Formula muted inputs={["better model"]} output="less human involvement" />
+
+But this is just one side to the autonomy, it's also true that
+
+<Formula inputs={["better agent", "better environment", "better specification"]} output="longer autonomy" />
+
+Model is just part of the equation, by making the environment itself better, we can create better loops.
+
+## Loop in use
+
+When we understand the principles behind the loop engineering, we can also understand that we are not chained to the ordinary software engineering where coding agent implement feature, tests it on their environment (browser), finding that it doesn't work, fixes it.
+
+But the same loop can be used in any context where we can make these principles possible, even outside of coding. I have been working on the loop engineering in the agent harnesses, more can be read from the previous [blog](https://www.samikuikka.com/en/blog/closing-the-loop/).
+
+<LoopInUse />
+
+This is what I have been building [Apo](https://docs.test-apo.online/) around.
+If we nail the principles, agents can do autonomous work in any environment we want!

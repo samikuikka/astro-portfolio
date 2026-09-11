@@ -1,0 +1,108 @@
+---
+/**
+ * Formula — a claim rendered as an equation row, Apo-dashboard style:
+ * near-black panel, square corners, JetBrains-ish mono, small-caps gray
+ * label, verdict dot, green output. For "better model → less human
+ * involvement"-style statements: not code, so they should not sit in a
+ * code fence. Static, no animation. `muted` dims the row (e.g. for the
+ * framing the post argues against).
+ */
+interface Props {
+	label?: string;
+	inputs: string[];
+	output: string;
+	muted?: boolean;
+}
+
+const { label, inputs, output, muted = false } = Astro.props;
+---
+
+<div class="fx not-prose" data-muted={muted || undefined}>
+	{
+		label && (
+			<span class="fx__label">
+				{label}
+			</span>
+		)
+	}
+	<div class="fx__row">
+		<span class="fx__dot" aria-hidden="true"></span>
+		{
+			inputs.map((term, i) => (
+				<>
+					{i > 0 && <span class="fx__op">+</span>}
+					<span class="fx__term">{term}</span>
+				</>
+			))
+		}
+		<span class="fx__arrow">→</span>
+		<span class="fx__out">{output}</span>
+	</div>
+</div>
+
+<style>
+	.fx {
+		margin: 1.75rem auto;
+		max-width: 40rem;
+		padding: 0.75rem 1rem;
+		border: 1px solid #404040;
+		border-radius: 0;
+		background: #0d0d0d;
+	}
+
+	.fx__label {
+		display: block;
+		margin-bottom: 0.35rem;
+		color: #999;
+		font-size: 0.62rem;
+		font-weight: 600;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.fx__row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.45rem 0.6rem;
+		align-items: center;
+		font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+			Monaco, Consolas, monospace;
+		font-size: 0.82rem;
+		font-variant-numeric: tabular-nums;
+		line-height: 1.5;
+		color: #f4f4f5;
+	}
+
+	.fx__dot {
+		flex: none;
+		width: 9px;
+		height: 9px;
+		border-radius: 999px;
+		background: #4ade80;
+		box-shadow: 0 0 0 1px #0d0d0d, 0 0 0 2px #2a4a38;
+	}
+
+	.fx__op,
+	.fx__arrow {
+		color: #737373;
+	}
+
+	.fx__out {
+		color: #4ade80;
+		font-weight: 600;
+	}
+
+	.fx[data-muted] .fx__dot {
+		background: #4d4d4d;
+		box-shadow: none;
+	}
+
+	.fx[data-muted] .fx__term,
+	.fx[data-muted] .fx__out {
+		color: #a3a3a3;
+	}
+
+	.fx[data-muted] .fx__out {
+		font-weight: 400;
+	}
+</style>

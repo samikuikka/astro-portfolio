@@ -12,6 +12,7 @@ export interface Post {
   /** Optional summary of post content. */
   excerpt?: string;
   image?: any;
+  video?: string;
   author?: string;
   draft?: boolean;
   Content?: AstroComponentFactory;

@@ -1,0 +1,334 @@
+---
+/**
+ * LoopInUse — the "Loop in use" figure: two rings, because the post shows
+ * the loop in two worlds — but the loop itself is the same. Both rings
+ * carry identical stations (changes → runs → inspects → PASS/FAIL, looping
+ * back); only the dim thing-line under each step swaps:
+ *
+ *   the feature loop:  application · application / tests · browser
+ *   the harness loop:  harness · agent on task · actual outcome
+ *
+ * The spec chip (amber, written once) feeds each ring from above. Apo
+ * palette: near-black, square corners, JetBrains Mono, neutral grays,
+ * color only in the verdict words. Static; the arrows carry direction.
+ */
+
+const R = 100;
+const C = 100;
+
+const polar = (deg: number, radius = R) => {
+	const rad = (deg * Math.PI) / 180;
+	return {
+		x: +(C + radius * Math.cos(rad)).toFixed(1),
+		y: +(C + radius * Math.sin(rad)).toFixed(1),
+	};
+};
+
+// One directed arc segment between exact angles (clockwise, y-down SVG
+// coords), ending in an arrowhead along the tangent.
+const arcSeg = (a: number, b: number) => {
+	const p1 = polar(a);
+	const p2 = polar(b);
+	const large = b - a > 180 ? 1 : 0;
+	const tangent = ((b + 90) * Math.PI) / 180;
+	const radial = (b * Math.PI) / 180;
+	const u = { x: Math.cos(tangent), y: Math.sin(tangent) };
+	const v = { x: Math.cos(radial), y: Math.sin(radial) };
+	const tip = { x: p2.x + u.x * 8, y: p2.y + u.y * 8 };
+	const back = { x: p2.x - u.x * 3, y: p2.y - u.y * 3 };
+	const c1 = { x: back.x + v.x * 7, y: back.y + v.y * 7 };
+	const c2 = { x: back.x - v.x * 7, y: back.y - v.y * 7 };
+	const f = (n: number) => n.toFixed(1);
+	return {
+		d: `M ${f(p1.x)} ${f(p1.y)} A ${R} ${R} 0 ${large} 1 ${f(p2.x)} ${f(p2.y)}`,
+		head: `${f(tip.x)},${f(tip.y)} ${f(c1.x)},${f(c1.y)} ${f(c2.x)},${f(c2.y)}`,
+	};
+};
+
+type Pos = "left" | "top" | "right" | "bottom";
+type StepKey = "changes" | "runs" | "inspects";
+
+// Stations clockwise from left (y-down SVG): left 180°, top 270°,
+// right 360°, bottom 450°, back to left 540°. Same in both rings.
+
+// Clear half-angle per station position. Station centers sit exactly on
+// the ring (viewBox 200, r 100, stations at the container edges). The ring
+// leaves a top/bottom station through its side edges (wide boxes → big
+// angle) and a left/right station through its top/bottom edges (short
+// boxes → small angle), plus a margin so arrowheads kiss the edge.
+const GAP_FOR: Record<Pos, number> = { left: 12, top: 26, right: 12, bottom: 26 };
+
+const STEPS: Array<{ pos: Pos; step: StepKey } | { pos: Pos; verdict: true }> = [
+	{ pos: "left", step: "changes" },
+	{ pos: "top", step: "runs" },
+	{ pos: "right", step: "inspects" },
+	{ pos: "bottom", verdict: true },
+];
+
+const ARCS = STEPS.map((station, i) => {
+	const next = STEPS[(i + 1) % STEPS.length];
+	const from = 180 + i * 90 + GAP_FOR[station.pos];
+	const to = 180 + (i + 1) * 90 - GAP_FOR[next.pos];
+	return arcSeg(from, to);
+});
+
+const LOOPS = [
+	{
+		title: "the feature loop",
+		spec: "feature specification",
+		things: {
+			changes: "application",
+			runs: "application / tests",
+			inspects: "browser",
+		} as Record<StepKey, string>,
+	},
+	{
+		title: "the harness loop",
+		spec: "behavior specification",
+		things: {
+			changes: "harness",
+			runs: "agent on task",
+			inspects: "actual outcome",
+		} as Record<StepKey, string>,
+	},
+];
+---
+
+<figure class="lu not-prose" data-loop-in-use>
+	<figcaption class="lu__sr-only">
+		Two loops with the same stations. In the feature loop, a feature
+		specification feeds a cycle where the coding agent changes the
+		application, runs the application and tests, and inspects the result
+		in the browser. In the harness loop, a behavior specification feeds
+		the same cycle where the agent changes the harness, runs the actual
+		agent on the task, and inspects the actual outcome. Both verdicts
+		pass or fail back into the cycle.
+	</figcaption>
+
+	{
+		LOOPS.map((loop) => (
+			<div class="lu__panel">
+				<span class="lu__title">{loop.title}</span>
+				<div class="lu__spec">
+					<span class="lu__spec-dot" aria-hidden="true" />
+					<span class="lu__spec-label">spec</span>
+					<span class="lu__spec-text">{loop.spec}</span>
+				</div>
+				<div class="lu__ring">
+					<svg class="lu__track" viewBox="0 0 200 200" focusable="false" aria-hidden="true">
+						{ARCS.map((arc) => (
+							<>
+								<path d={arc.d} />
+								<polygon points={arc.head} />
+							</>
+						))}
+					</svg>
+
+					{STEPS.map((station) =>
+						"verdict" in station ? (
+							<div class:list={["lu__station", `lu__station--${station.pos}`]}>
+								<span class="lu__verdict">
+									<span class="lu__pass">PASS</span>
+									<span class="lu__slash"> / </span>
+									<span class="lu__fail">FAIL</span>
+								</span>
+							</div>
+						) : (
+							<div class:list={["lu__station", `lu__station--${station.pos}`]}>
+								<span class="lu__step">{station.step}</span>
+								<small class="lu__thing">{loop.things[station.step]}</small>
+							</div>
+						),
+					)}
+				</div>
+			</div>
+		))
+	}
+</figure>
+
+<style>
+	.lu {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.9rem;
+		align-items: start;
+		margin: 2rem auto;
+		max-width: 46rem;
+	}
+
+	.lu__sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	.lu__panel {
+		min-width: 0;
+		border: 1px solid #404040;
+		border-radius: 0;
+		background: #0d0d0d;
+		padding: 0 0.6rem 1rem;
+	}
+
+	.lu__title {
+		display: block;
+		padding: 0.6rem 0.9rem 0.45rem;
+		border-bottom: 1px solid #262626;
+		margin: 0 0.3rem;
+		color: #999;
+		font-size: 0.62rem;
+		font-weight: 600;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	/* Spec: the human input, written once, feeding the ring from above. */
+	.lu__spec {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.45rem;
+		margin: 0.85rem auto 0.2rem;
+		padding: 0.28rem 0.6rem;
+		border: 1px solid #7a5f30;
+		width: fit-content;
+		max-width: 100%;
+		font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+			Consolas, monospace;
+		font-size: 0.68rem;
+	}
+
+	.lu__spec-dot {
+		flex: none;
+		width: 9px;
+		height: 9px;
+		border-radius: 999px;
+		background: #d9b06a;
+	}
+
+	.lu__spec-label {
+		color: #d9b06a;
+		font-size: 0.55rem;
+		font-weight: 600;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.lu__spec-text {
+		color: #f4f4f5;
+		white-space: nowrap;
+	}
+
+	.lu__ring {
+		position: relative;
+		width: 13rem;
+		height: 13rem;
+		margin: 1.7rem auto 1.6rem;
+	}
+
+	.lu__track {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		overflow: visible;
+	}
+
+	.lu__track path {
+		fill: none;
+		stroke: #525252;
+		stroke-width: 2;
+	}
+
+	.lu__track polygon {
+		fill: #525252;
+	}
+
+	/* Station: the step name (identical in both rings) with the dim thing
+	   it operates on in this world. Brighter border + lighter fill so the
+	   parts read clearly against the panel. */
+	.lu__station {
+		position: absolute;
+		z-index: 2;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.12rem;
+		width: 5rem;
+		padding: 0.26rem 0.45rem;
+		border: 1px solid #5c5c5c;
+		border-radius: 0;
+		background: #161616;
+		font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+			Consolas, monospace;
+		text-align: center;
+	}
+
+	.lu__step {
+		color: #fafafa;
+		font-size: 0.6rem;
+		font-weight: 700;
+		line-height: 1.3;
+	}
+
+	.lu__thing {
+		color: #a3a3a3;
+		font-size: 0.5rem;
+		line-height: 1.3;
+	}
+
+	.lu__station--left {
+		top: 50%;
+		left: 0;
+		transform: translate(-50%, -50%);
+	}
+
+	.lu__station--top {
+		top: 0;
+		left: 50%;
+		transform: translate(-50%, -50%);
+	}
+
+	.lu__station--right {
+		top: 50%;
+		right: 0;
+		transform: translate(50%, -50%);
+	}
+
+	.lu__station--bottom {
+		bottom: 0;
+		left: 50%;
+		transform: translate(-50%, 50%);
+	}
+
+	.lu__verdict {
+		font-size: 0.6rem;
+	}
+
+	.lu__pass {
+		color: #4ade80;
+		font-weight: 600;
+	}
+
+	.lu__slash {
+		color: #525252;
+		font-weight: 400;
+	}
+
+	.lu__fail {
+		color: #f87171;
+		font-weight: 600;
+	}
+
+	@media (max-width: 40rem) {
+		.lu {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

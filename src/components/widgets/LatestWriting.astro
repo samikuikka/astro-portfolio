@@ -4,6 +4,7 @@ import { getPermalink } from "~/utils/permalinks";
 import { getLangFromUrl, useTranslations } from "~/i18n/utils";
 import { Icon } from "astro-icon/components";
 import { Image } from "astro:assets";
+import { getPostVideoUrl } from "~/utils/postMedia";
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
@@ -16,6 +17,7 @@ const localePosts = latestPosts.map((post) => ({
   ...post,
   permalink: post.permalink.replace("%locale%", locale),
   url: getPermalink(post.permalink.replace("%locale%", locale), "post", locale),
+  videoUrl: post.video ? getPostVideoUrl(post.id, post.video) : undefined,
 }));
 ---
 
@@ -48,17 +50,30 @@ const localePosts = latestPosts.map((post) => ({
           >
             <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             
-            {post.image && (
+            {(post.image || post.videoUrl) && (
               <div class="relative h-48 overflow-hidden">
-                <Image
-                  src={post.image}
-                  alt={post.title}
-                  width={600}
-                  height={300}
-                  sizes="(max-width: 768px) 100vw, (max-width: 1040px) 50vw, 33vw"
-                  breakpoints={[400, 640]}
-                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
+                {post.videoUrl ? (
+                  <video
+                    class="w-full h-full object-cover"
+                    src={post.videoUrl}
+                    autoplay
+                    loop
+                    muted
+                    playsinline
+                    preload="metadata"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <Image
+                    src={post.image}
+                    alt={post.title}
+                    width={600}
+                    height={300}
+                    sizes="(max-width: 768px) 100vw, (max-width: 1040px) 50vw, 33vw"
+                    breakpoints={[400, 640]}
+                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                )}
                 <div class="absolute inset-0 bg-gradient-to-t from-gray-900/90 to-transparent" />
               </div>
             )}
@@ -111,3 +126,15 @@ const localePosts = latestPosts.map((post) => ({
     </div>
   </div>
 </section>
+
+<script>
+  // Autoplaying cover videos are decoration; honor reduced-motion by pausing.
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    document
+      .querySelectorAll<HTMLVideoElement>("video[autoplay]")
+      .forEach((v) => {
+        v.removeAttribute("autoplay");
+        v.pause();
+      });
+  }
+</script>

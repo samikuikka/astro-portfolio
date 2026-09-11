@@ -1,0 +1,181 @@
+---
+/**
+ * Chain — a multi-stage process rendered as a dot rail: one vertical line,
+ * a dot per step, labels to the right. CI-pipeline reading, no step numbers.
+ *
+ * Pure apo palette: near-black #0d0d0d, square corners, JetBrains Mono,
+ * neutral grays — color only for state. The verdict dot is split
+ * green/red and PASS/FAIL words carry their own colors, so neither
+ * outcome is claimed before the evidence exists. Static, no animation.
+ */
+interface Step {
+	text: string;
+	note?: string;
+}
+
+interface Props {
+	label?: string;
+	steps: Step[];
+	output: string;
+}
+
+const { label, steps, output } = Astro.props;
+
+// Split the output into colored words: PASS → green, FAIL → red, the
+// separator dim. Anything else renders neutral (falls back to plain).
+type VerdictWord = { text: string; tone?: "pass" | "fail" | "slash" };
+const verdictWords: VerdictWord[] = [];
+for (const [i, seg] of output
+	.split("/")
+	.map((s) => s.trim())
+	.filter(Boolean)
+	.entries()) {
+	if (i > 0) verdictWords.push({ text: "/", tone: "slash" });
+	verdictWords.push({
+		text: seg,
+		tone: seg === "PASS" ? "pass" : seg === "FAIL" ? "fail" : undefined,
+	});
+}
+---
+
+<div class="ch not-prose" data-chain>
+	{
+		label && (
+			<span class="ch__label">
+				{label}
+			</span>
+		)
+	}
+	<div class="ch__rail">
+		{
+			steps.map((step) => (
+				<div class="ch__step">
+					<span class="ch__dot" aria-hidden="true" />
+					<div class="ch__text">
+						{step.text}
+						{step.note && <small>{step.note}</small>}
+					</div>
+				</div>
+			))
+		}
+		<div class="ch__step ch__step--out">
+			<span class="ch__dot ch__dot--verdict" aria-hidden="true" />
+			<div class="ch__text ch__verdict">
+				{verdictWords.map((word) => (
+					<span
+						class:list={
+							word.tone === "pass"
+								? "ch__pass"
+								: word.tone === "fail"
+									? "ch__fail"
+									: word.tone === "slash"
+										? "ch__slash"
+										: undefined
+						}
+					>
+						{word.text}
+					</span>
+				))}
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+	.ch {
+		margin: 1.75rem auto;
+		max-width: 40rem;
+		border: 1px solid #404040;
+		border-radius: 0;
+		background: #0d0d0d;
+	}
+
+	.ch__label {
+		display: block;
+		padding: 0.6rem 1rem 0.45rem;
+		border-bottom: 1px solid #262626;
+		color: #999;
+		font-size: 0.62rem;
+		font-weight: 600;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.ch__rail {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		padding: 0.85rem 1rem;
+		font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+			Consolas, monospace;
+	}
+
+	/* The one rail every dot sits on. */
+	.ch__rail::before {
+		content: "";
+		position: absolute;
+		top: 1.4rem;
+		bottom: 1.4rem;
+		left: calc(1rem + 4.5px);
+		width: 1px;
+		background: #262626;
+	}
+
+	.ch__step {
+		position: relative;
+		display: flex;
+		align-items: baseline;
+		gap: 0.75rem;
+		padding: 0.4rem 0;
+	}
+
+	.ch__dot {
+		position: relative;
+		flex: none;
+		align-self: center;
+		width: 9px;
+		height: 9px;
+		border: 2px solid #525252;
+		border-radius: 999px;
+		background: #0d0d0d;
+	}
+
+	/* Verdict dot: neutral until the evidence decides — the PASS/FAIL
+	   words carry the state colors, the rail stays monochrome. */
+	.ch__dot--verdict {
+		border-color: #737373;
+	}
+
+	.ch__text {
+		color: #f4f4f5;
+		font-size: 0.8rem;
+		line-height: 1.4;
+	}
+
+	.ch__text small {
+		display: block;
+		color: #737373;
+		font-size: 0.62rem;
+	}
+
+	.ch__step--out {
+		padding-top: 0.55rem;
+	}
+
+	.ch__verdict {
+		font-weight: 600;
+	}
+
+	.ch__pass {
+		color: #4ade80;
+	}
+
+	.ch__fail {
+		color: #f87171;
+	}
+
+	.ch__slash {
+		color: #525252;
+		font-weight: 400;
+	}
+</style>
