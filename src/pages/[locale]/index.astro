@@ -6,7 +6,7 @@ import Header from "~/components/widgets/Header.astro";
 import { headerData } from "~/navigation";
 
 export async function getStaticPaths() {
-  return [{ params: { locale: "en" } }, { params: { locale: "cn" } }];
+  return [{ params: { locale: "en" } }];
 }
 ---
 

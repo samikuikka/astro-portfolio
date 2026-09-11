@@ -29,12 +29,16 @@ export default defineConfig({
     }
   },
   i18n: {
-    locales: ["en", "zh-CN"],
+    locales: ["en"],
     defaultLocale: "en",
     routing: {
       prefixDefaultLocale: true,
       redirectToDefaultLocale: true,
     },
+  },
+  // Chinese locale was removed; keep the old /cn link working
+  redirects: {
+    "/cn": "/en",
   },
   // Astro 7 defaults to 'jsx' whitespace handling; 'true' keeps the Astro 5 output
   compressHTML: true,
