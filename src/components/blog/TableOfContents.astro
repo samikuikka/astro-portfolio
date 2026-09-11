@@ -39,17 +39,46 @@ const tocHeadings = headings.filter((h) => h.depth === 2 || h.depth === 3);
 }
 
 <script>
-  // Scroll-spy: highlight the TOC link for the heading currently in view.
-  // The TOC only renders on >= 2xl screens, so skip the observer below that.
+  // Scroll-spy: highlight the TOC link for the section currently in view.
+  // The current section is the last heading whose top has scrolled past the
+  // activation line (just below the ~80px sticky header), so the highlight
+  // holds while reading a long section, works when scrolling back up, and
+  // shows the first section on load — an entry-order-based IntersectionObserver
+  // gets all three wrong.
   const toc = document.getElementById("toc");
   const wide = window.matchMedia("(min-width: 1536px)");
 
-  if (toc && wide.matches) {
+  if (toc) {
     const links = Array.from(
       toc.querySelectorAll<HTMLAnchorElement>("[data-toc-link]"),
     );
+    const headings = links
+      .map((link) => document.getElementById(link.dataset.tocLink || ""))
+      .filter((heading): heading is HTMLElement => heading !== null);
+
+    let activeId: string | null = null;
+
+    // Panel's own scroll container (max-h + overflow-y-auto in SinglePost).
+    // Follow the active link by setting scrollTop directly: scrollIntoView on
+    // position:fixed links also scrolls the window in Chromium.
+    const panel = toc.parentElement;
+    const follow = (link: HTMLAnchorElement) => {
+      if (!panel || !wide.matches) return;
+      const top =
+        link.getBoundingClientRect().top -
+        panel.getBoundingClientRect().top +
+        panel.scrollTop;
+      const bottom = top + link.offsetHeight;
+      if (top < panel.scrollTop + 8) {
+        panel.scrollTop = top - 8;
+      } else if (bottom > panel.scrollTop + panel.clientHeight - 8) {
+        panel.scrollTop = bottom - panel.clientHeight + 8;
+      }
+    };
 
     const setActive = (id: string) => {
+      if (id === activeId) return;
+      activeId = id;
       links.forEach((link) => {
         const active = link.dataset.tocLink === id;
         link.classList.toggle("text-emerald-400", active);
@@ -57,21 +86,49 @@ const tocHeadings = headings.filter((h) => h.depth === 2 || h.depth === 3);
         link.classList.toggle("bg-emerald-500/5", active);
         link.classList.toggle("text-gray-500", !active);
         link.classList.toggle("border-transparent", !active);
+        if (active) follow(link);
       });
     };
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) setActive(entry.target.id);
-        });
-      },
-      { rootMargin: "-100px 0px -66%", threshold: 0 },
-    );
+    const update = () => {
+      const line = 100;
+      let current = headings[0];
+      for (const heading of headings) {
+        if (heading.getBoundingClientRect().top <= line) current = heading;
+      }
+      if (current) setActive(current.id);
+    };
 
+    let ticking = false;
+    const requestUpdate = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        update();
+      });
+    };
+
+    window.addEventListener("scroll", requestUpdate, { passive: true });
+    window.addEventListener("resize", requestUpdate, { passive: true });
+    update();
+
+    // TOC clicks keep native history semantics but always honor
+    // prefers-reduced-motion, even if the runtime scroll-smooth class is absent.
+    const smooth =
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     links.forEach((link) => {
-      const heading = document.getElementById(link.dataset.tocLink || "");
-      if (heading) observer.observe(heading);
+      link.addEventListener("click", (event) => {
+        const heading = document.getElementById(link.dataset.tocLink || "");
+        if (!heading) return;
+        event.preventDefault();
+        history.pushState(null, "", `#${heading.id}`);
+        heading.scrollIntoView({
+          behavior: smooth ? "smooth" : "auto",
+          block: "start",
+        });
+        setActive(heading.id);
+      });
     });
   }
 </script>
