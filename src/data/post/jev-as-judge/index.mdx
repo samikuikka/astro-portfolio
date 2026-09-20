@@ -1,0 +1,106 @@
+---
+publishDate: 2026-09-20T00:00:00Z
+title: "Jev-as-Judge: A Confidence Signal for Evals"
+excerpt: "System One models like Jev can be used in evals to give confidence signal for LLM-as-judge results, which can be easily used to debug eval setup problems."
+image: "./title.png"
+tags:
+  - Evals
+  - Apo
+  - Jev
+---
+import CodeBlock from "../../../components/blog/CodeBlock.astro";
+
+# Jev-as-Judge
+
+Jev from [TypeSafe](https://typesafe.ai/) has gotten a lot of hype since the release.
+There have been a lot of use cases for it, but as for me, since first hearing about it, I had only one thought in my head: can this be used in evals?
+
+So I tried it.
+
+I took 2,094 real LLM-as-judge checks from [Apo](https://docs.test-apo.online/) and re-ran the same decisions with Jev. It agreed with my existing judge 96.2% of the time, cost $0.20 in total, and had a p50 latency of 0.34s.
+
+But that is something quite expected given the recent hype. However, what was actually interesting is how we can use the confidence signal to get even more information out of the evals. The lower the confidence Jev got, the more often my existing LLM-as-judge and the Jev disagreed. And when I went to inspect those problems I found actual problems in the eval setup: ambigious criteria,judges passing too esily, or chgecks that probably should have passed.
+
+That made me think about the LLM-as-judge bit differently. Instead of getting only binary PASS / FAIL, it is beneficial to have models like Jev give us another signal: how confident we are on the decisions.
+
+This post is about that signal, how System One models can change how we build our evals.
+
+## Binary nature of LLM-as-Judge
+
+When we use an LLM to judge our output, the final outcome is most likely binary PASS / FAIL.
+Not because PASS / FAIL is the best way to judge, but because it is way harder to make
+an LLM-as-judge that scores a value. Not impossible if the set of scores is small (e.g. more of a classification problem), but once it becomes a real value like 95.8%, the scores lose their meaning.
+
+Scores are good, but if the score given is not consistent between runs, it loses its meaning. E.g. if we run the same LLM-as-judge that outputs a % score, it is VERY hard to enforce that the output from the reruns is exactly the same. This becomes even more problematic when comparing two different runs: if one has 84% and one 87%, does it actually mean the 87% was better? Or do you need to run the tests 10 times each, and then take the one that scored higher on median?
+
+All that makes it easier to just give PASS or FAIL, and optimize everything for that. A test fails, or it passes, there is no middle ground.
+
+## Jev as Confidence to the LLM-as-Judge
+
+Well, what does that talk about LLM-as-judge have to do with Jev?
+If you have not heard about Jev: Jev is a "System One" model, which here just means it makes fast, structured decisions. As output, it gives structured output from the user-defined options you give it. Basically, choosing one option from the set, and also giving its confidence signal.
+
+For example, we could ask it whether my blog text has grammar issues, and it could answer something like:
+
+<CodeBlock title="jev.json" lang="json" code={`{
+  "type": "noul",
+  "noul": 0.95
+}`} />
+
+
+Which just means it's confident that we have mistakes in the blog. `noul` is Jev's boolean-style answer: a 0–1 value, where 0.95 means it's 95% sure the answer is yes.
+
+
+This innate ability to give a confidence signal led me to a thought: can this same signal be used to check the LLM-as-judge's binary output, and how good is it at it?
+
+
+## Rejudging with the Jev
+
+As I'm working on my agent acceptance testing framework Apo, I have the history of all of my runs, and can easily re-judge all of the LLM-as-judge calls against real data.
+
+So I just did that. I took 2,094 different LLM-as-judge runs that were run recently.
+And re-ran them with Jev to see what result Jev would give on the same task.
+
+| n = 2,094       | Jev pass | Jev fail |
+| :-------------- | -------: | -------: |
+| **Judge pass**  |  1,860   |       68 |
+| **Judge fail**  |     11   |      155 |
+
+The agreement with the LLM-as-judge results was 96.2%, and the total cost of the whole +2,000 eval runs came to a total of $0.20 (p50 0.34s).
+
+While that already tells that Jev could be used as an LLM-as-judge with results comparable to the current system, what makes it 10 times more interesting is when we start to think of the results in terms of confidence:
+
+| Jev confidence | Share of checks | Agreement with judge |
+| :------------- | --------------: | -------------------: |
+| ≥ 0.95         |             72% |                99.5% |
+| 0.60–0.95      |             20% |                94.5% |
+| &lt; 0.60      |              8% |                71.3% |
+
+What really makes this useful is that confidence score.
+When the confidence is high, my LLM-as-judge and the Jev both agree on the same result 99.5% of the time. That is really impressive. Even when the confidence is between 0.6–0.95, we have 94.5% agreement between the Jev and the LLM-as-judge.
+
+Notice that it is a wrong interpretation to say that Jev was 99.5% (or anything else) right on the verdict. My LLM-as-judge could also have made mistakes (I have not manually checked all +2,000 judge results). So what this shows is that Jev agrees extremely strongly with my existing checks when Jev is confident.
+
+But the most interesting part is that "&lt; 0.6" part. What that means is that Jev is not very confident in the results, and due to that, the agreement with my judge is much lower.
+
+## Disagreement on the Results
+
+I had agents inspect each of the 79 disagreements against the original test criteria and run output, and categorize what appeared to have gone wrong.
+
+| Jev's p(pass)        | Count    | Meaning (verified by adjudication) |
+| :------------------- | -------: | :--------------------------------- |
+| 0.3–0.7 (coin-flip)  | 42 (53%) | "I can't tell" — ambiguous criteria |
+| ≤ 0.3 (certain fail) | 31 (39%) | "the judge passed too easily"      |
+| ≥ 0.7 (certain pass) |  6 (8%)  | "the judge failed this wrongly"    |
+
+What this gives is a real gold-mine for my evals. By looking at both the confidence of the Jev and where the disagreements with my LLM-as-judge are, I can easily start to spot problems in my current evals.
+
+Think about it: we just gave a dirt-cheap "Jev-as-judge" to the LLM-as-judge, and got problems out of it all around my evals. Now this information can be used to create even better evals, for example, making ambiguous criteria less ambiguous, finding LLM-as-judge errors in my previous runs and fixing them in the results, changing the judge to not pass as easily.
+All this, basically free!
+
+## Free Signal to the Judges
+
+The signal from the Jev is too good to leave out: now the Jev signal is part of all Apo LLM-as-judge runs as additional information.
+This opens up a lot of possibilities. For example, for each run result we could now show where the confidence is low, or where the LLM-as-judge and the Jev disagree, and use that as a signal for the coding agent to improve the eval.
+
+And when we talk about Jev, we say it's a "System One" model. Well, we could then use the signal from the "System One" to do a more thorough pass with the "System Two" for example, use Agent-as-Judge for the checks with low confidence instead of LLM-as-judge. Then we could get the best of both worlds: cheap checks for the high-confidence cases, and more thorough analysis on the tasks where confidence is low. So many possibilities have opened up recently, can't wait to get these into Apo.
