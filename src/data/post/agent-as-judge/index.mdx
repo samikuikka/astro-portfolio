@@ -1,0 +1,176 @@
+---
+publishDate: 2026-09-30T00:00:00Z
+title: "Agent-as-Judge: Harder Evals, More Computation"
+excerpt: "What happens when same eval is changed from passive grading to an agent that can investigate the whole run (and previous runs) and base the score on that. For my tests, it was massive improvement on the overall scoring, reducing the common mistakes LLM-as-judges did."
+image: "./title.png"
+tags:
+  - Evals
+  - Apo
+  - Jev
+---
+import CodeBlock from "../../../components/blog/CodeBlock.astro";
+
+# Agent-as-Judge
+
+In my latest [post](/en/blog/jev-as-judge/), I was using [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev) to battle eval problems in real production data. One of the problems that we found was that some of the LLM-as-judge results were wrong, even if the model was good and the input contained information we thought would have been enough to answer the question.
+
+But it's hard to make them pass in a single-pass LLM call. I'll go more in detail of problems with grading later, but the data that we give the LLM-as-judge is, most of the time, small compared to all the data that the agent did in its run.
+
+There is an evolution of the judges that was first introduced (at least the paper was published) already in 2024: [Agent-as-a-Judge](https://arxiv.org/pdf/2410.10934). While the idea is that old, the use of it has been modest. 
+
+But it shouldn't be. The advancements in agents have improved dramatically in the past few years, and the whole landscape of what is possible with agents has changed. So I started evaluating Agent-as-Judge in [Apo](https://docs.test-apo.online/), to start handling my hardest, most error-prone checks with the agents. The goal is the same, create good evals, but now with a more advanced check setup.
+
+Let's start!
+
+## What goes wrong with an LLM judge
+
+To showcase problems with the LLM-as-judge results, we need a way to measure it. I chose to use [DABstep](https://arxiv.org/abs/2506.23719), a payments operations benchmark for agents that I translated to Apo tests. This benchmark is about an agent dropped into a workspace with a question and a lot of payment-related files, where the agent needs to read and understand a lot of context and answer based on that. Each test has a ground truth and the questions are genuinely hard, the benchmark authors got a 16% pass rate on the best agent, mostly because the correct interpretation of the files to give the answer is a hard task.
+
+So when we use an LLM judge, we give it a task on what it needs to do (PASS / FAIL), and the rubric (all the different information that the answer needs). The judge sees only what you give it. When we depend on some evidence, it needs to be in the rubric for the agent to answer correctly. And on tasks like DABstep, it is very easy for the agent not to give the correct answers, due to the nature of the documents and just the sheer volume.
+
+### Failure mode 1: Fabricated verification
+
+On our task, in order for the agent to answer a question, it needs a lot of different files to rationalize the answer.
+That is not easy, and mistakes are common. Judging a run that answered "yes" to the question "is this merchant in danger of high fraud-rate", my single LLM judge answered:
+
+
+> "The submitted final answer is 'yes', which directly answers the question. In the DABstep context for this task, the merchant's fraud rate exceeds the relevant threshold, so 'yes' is the expected answer."
+
+There was no threshold in anything it saw. This is an especially dangerous failure mode, as the answer seems authoritative, but is also time-consuming for humans to double check.
+
+### Failure mode 2: Plausibility as correctness
+
+A softer mistake than the previous one. Sometimes the answer is close, or resembles the "correct answer" a lot, but should still fail. But "looks right" doesn't mean it should pass, it also needs to be correct, and this happened in some of the runs. For example, in one of the checks, it passed a wrong dollar figure as the answer and answered:
+
+> "consistent with the expected scale and precision for this computation."
+
+Yes, the format was correct but the value was NOT correct: the right answer was −0.948103, so what the judge passed as "consistent in scale" was about 700 times off.
+When good verification is not possible, it then falls back to plausibility: does it look correct?
+Wrong answers to hard questions are commonly plausible, they seem reasonable and believable, but are still wrong.
+
+### Failure mode 3: style passes for substance
+
+This is an even more subtle one, and has to do with the limitation that our LLM-as-judges can't really verify the output.
+So the limitation starts to shape how the checks are done, more into the form-checks like "is it coherent", or "is it well-structured". These, of course, any LLM can pass, even if the information it gives is hallucinated.
+
+When you want to measure a thing, that thing needs to be in the rubric, but it gets harder when the judge itself has no way to verify the claims.
+
+### Failure mode 4: failing correct answer
+
+This is the same gap but in the other direction. One of my tests had in the rubric: "as evidenced by the run's own work". My single-shot judge failed a run whose answer was exactly right:
+
+> "The submitted answer is a single numeric value (0.123217) with no supporting tool_log … or intermediate work shown …"
+
+We did not give in the rubric how the work was done, but at the same time, the question was not about that. The answer was correct, but small things in the rubric made the test fail even the correct answer.
+
+### Failure mode 5: coin flips
+
+This is an annoying one: when the eval is hard to judge, some of the tests become coin flips when running the same output many times with the same model. Sometimes it passes, sometimes it doesn't. 
+
+This tells more about my judge and what is asked: sometimes the correct answer has edge cases and things that have not been taken care of in the task. When there's ambiguity, it is much easier to get these kinds of coin flips.
+
+
+## Agent-as-judge in Apo
+
+Now we know the problems, but can the agent-as-judge actually work better? After all, both the agent-as-judge and the LLM-as-judge are just LLM calls: one is one call, the other one does the calls in a loop.
+
+For this, I have been running DABstep tests in the Apo. In Apo, each DABstep question is a recorded task run: the agent works on the task, outputs a deliverable, and all these deliverables are then evaluated with eval tests like this: 
+
+
+<CodeBlock title="t-agent-demo.eval.ts" lang="ts" code={`// single-shot: grades the staged value only — plausible passes
+test("summary-reads-well", async (t, { deliverables }) => {
+  await t.judge(deliverables.summary,
+    "PASS if the summary reads like a coherent, well-formed revenue report…");
+});
+
+// agentic: must verify every figure against the run's own work
+test("figures-supported-by-work", async (t) => {
+  await t.agent(
+    "PASS only if every figure in the summary is supported by this run's work_log deliverable. " +
+    "FAIL if any headline figure disagrees with the work log. " +
+    "Investigate the deliverables before deciding.",
+    { label: "agentic-consistency" });
+});`} />
+
+What is different with the agent-as-judge, is what it is given.
+When we work with the LLM-as-judge, we must give all the information upfront. So the agent gets a large amount of information and needs to answer the question based on that. If that means reading a 100-page document and finding whether there is a single sentence we are interested in, we give the 100-page document, or try to make the deliverable smaller first without an LLM.
+
+But in Apo, what makes the agent-as-judge an actually better choice is that we already have good tooling for inspecting information with the CLI. So what we give the agent is just the same tooling that Apo already has: it can read deliverables, it can inspect the runs, it can check which tests failed, it can read the traces from the run.
+
+Now this allows us to fix a lot of the problems we had with the LLM-as-judge!
+
+
+## Run results from Apo
+
+So, the runs. I have 57 finished DABstep runs recorded in Apo (21 in one project, 36 more in a second one), every one already graded by the deterministic benchmark check: 27 right answers, 30 wrong answers. I judged all 57 with both judges: same model on both sides (deepseek-v4.1-flash), same rubric, and the answer key hidden from both. Then scored both against the key.
+
+| | agreement | false passes | false fails | could not verify | cost / check | latency p50 |
+|---|---|---|---|---|---|---|
+| LLM-as-judge | 62.5% | **20** | 1 | 1 | $0.0015 | 26 s |
+| agent-as-judge | **100%** | **0** | 0 | 4 | $0.0017 | **24 s** |
+
+
+Here are the failure modes again, now with the agent-as-judge
+
+1) Fabricated verification
+
+This doesn't happen with the new agent-as-judge in my test set. Where the single-shot judge invented things like a threshold in some tests, the agent itself looked up the real answers in prior runs' reports to get the real information. 
+The agent can not only look at its own run information, but also at every other run, those that passed and those that failed, to base its answer on the correct output.
+
+2) Plausibility as correctness
+
+This is not that cleanly fixed with the agent, at least in my testing.
+The plausibility doesn't go away that easily when we give it more data, but it can still help. 
+
+As the agent is taught to look for previous runs, it can base its answer on the previous run records of correct answers instead of checking only its own rubric.
+
+3) Style passes for substance
+
+Structurally fixed. Instead of relying on the style of the answer, we can change our checks to actually ask the question we wanted.
+
+For example, if the original check was:
+
+<CodeBlock title="agent-demo.eval.ts" lang="ts" code={`test("summary-reads-well", ...
+  "PASS if the summary reads like a coherent, well-formed
+   revenue report with concrete figures…")`} />
+
+
+Now the rubric can be made to ask the real thing.
+
+<CodeBlock title="agent-demo.eval.ts" lang="ts" code={`test("figures-supported-by-work", ...
+  "PASS only if every figure in the summary is supported by
+   this run's work_log deliverable. FAIL if any figure
+   disagrees with the work log or appears nowhere in it.")`} />
+
+
+4) Failing correct answer
+
+This was also fixed in my tests, the test set did not contain failing correct answers anymore. From the traces, like in previous explanations, the agent started looking for verification, looking for previous runs, and based the answer on that. Which made it much more correct in its answers.
+
+5) Coin flips
+
+Not fixed. And this is the one that the agent-as-judge is not really meant to fix.
+
+If the tests contain hard edge cases or things that are just hard to judge, it won't really help to change from the LLM-as-judge to the agent-as-judge.
+
+
+### Fair comparison?
+
+One might ask whether this is a fair comparison. I think it gives good guidance on what to do with the agent-as-judge.
+It doesn't say that the agent-as-judge will always be better, but from my testing it really is, due to a more thorough verification process and by being able to check previous runs on the same check.
+
+Also, creating the tests becomes easier, you do not need to think that much anymore about what information you need to give to the agent, and how you should give it, as the agent is able to get the information itself from the runs. In Apo it is better than the judge, but that also doesn't mean that you should change all your judges to agents.
+
+Most of the checks already do not fail with the LLM-as-judge, and those have no reason to change to the agents.
+However, for the hardest evals, changing to the agent seems like a very viable option.
+
+## Closing thoughts
+
+One final thing that the agent-as-judge fits well into is this "tiered approach" for evals that I have been working on in the Apo framework. What I mean by that is that when a user creates eval tests, they should do the tests in the order of: deterministic --> non-deterministic.
+
+If the test is easy to do deterministically, like normal Apo checks, it should be done that way. But with the agents, the non-deterministic checks can now also be tiered: we have the LLM-as-judge for easy checks, and the agent-as-judge for the checks that need the most computation for the answer.
+
+This makes a good tiered system for tests: deterministic --> LLM-as-judge --> Agent-as-judge.
+Similarly to my previous Jev blog, what we want to do is do the easy things cheaply, and focus on the things that are hard.
+
+Finally, Apo now has a native way for agent-as-judges with `t.agent()` in the tests. The first version is out, and I intend to spend more time on the tooling for the agent. However, the initial outcomes from it are very good, as this post shows. Go try it out!

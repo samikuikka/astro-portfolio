@@ -197,11 +197,12 @@ const normalized: Part[][] = lines.map((line) => {
 	/* Lines exist statically but are hidden until their stream turn.
 	   When a line is active, a blinking cursor sits at the end of the
 	   visible text — simulating a terminal writing output.
-	   Flex row: whitespace-only text nodes between parts (Astro's renderer
-	   emits newline separators) are not rendered as flex items, so they
-	   can't leak into the output. */
+	   Flex row (drops Astro's whitespace-only text nodes between parts);
+	   fit-content so the line hugs its text and the end-of-line cursor sits
+	   right after it, like the apo docs original. */
 	.terminal__line {
 		display: flex;
+		width: fit-content;
 		min-height: 0.6rem;
 		color: #c7ccd9;
 		opacity: 0;
@@ -261,11 +262,11 @@ const normalized: Part[][] = lines.map((line) => {
 </style>
 
 <script>
-	// Typewriter effect: characters stream in, like a real terminal writing output.
-	// Fast enough to feel snappy (~1s total) but each character appears progressively.
+	// Typewriter effect: each line wipes in as a CSS clip-path transition,
+	// sequenced line by line. Fast enough to feel snappy (~1s total) and
+	// smooth regardless of JS timer throttling (embedded webviews clamp
+	// timers, which wrecks any per-character JS stepping).
 	const TARGET_TOTAL_MS = 1000;
-	const MIN_CHAR_MS = 4; // never slower than 4ms per char
-	const MAX_CHAR_MS = 18; // never faster than 18ms per char (visible writing)
 	const LINE_START_GAP_MS = 30; // small pause when a new line begins
 
 	function prefersReducedMotion(): boolean {
@@ -273,6 +274,8 @@ const normalized: Part[][] = lines.map((line) => {
 	}
 
 	function setupTerminal(root: HTMLElement) {
+		if (root.dataset.inited) return;
+		root.dataset.inited = "1";
 		const runBtn = root.querySelector<HTMLButtonElement>("[data-run]");
 		const runLabel = root.querySelector<HTMLElement>("[data-run-label]");
 		const lines = Array.from(root.querySelectorAll<HTMLElement>("[data-line]"));
@@ -287,13 +290,9 @@ const normalized: Part[][] = lines.map((line) => {
 		});
 
 		const totalChars = lineData.reduce((sum, l) => sum + Math.max(l.length, 1), 0);
-		const charDelay = Math.max(
-			MIN_CHAR_MS,
-			Math.min(MAX_CHAR_MS, TARGET_TOTAL_MS / totalChars),
-		);
 
 		let streaming = false;
-		let timer: number | undefined;
+		const timers: number[] = [];
 
 		function reset() {
 			for (const { el, spans } of lineData) {
@@ -303,13 +302,14 @@ const normalized: Part[][] = lines.map((line) => {
 				for (const span of spans) {
 					span.style.visibility = "";
 					span.style.clipPath = "";
+					span.style.transition = "";
 				}
 			}
 			root.removeAttribute("data-streaming");
 			root.removeAttribute("data-done");
 		}
 
-		async function stream() {
+		function stream() {
 			if (streaming) return;
 			streaming = true;
 			reset();
@@ -329,46 +329,72 @@ const normalized: Part[][] = lines.map((line) => {
 				for (const span of spans) span.style.visibility = "hidden";
 			}
 
-			// Stream character by character
-			let charIndex = 0;
-			for (const { el, spans } of lineData) {
-				el.setAttribute("data-shown", "");
-				el.setAttribute("data-active", "");
+			// Each line's reveal runs as a CSS transition on clip-path: the JS
+			// only decides WHEN a line starts (one timer per line — coarse and
+			// throttle-tolerant), and the browser interpolates the wipe. Timer
+			// clamping in embedded webviews makes any per-character JS stepping
+			// crawl or burst; a transition stays smooth regardless.
+			let acc = 0;
+			for (const line of lineData) {
+				const startAt = acc;
+				const dur = (Math.max(line.length, 1) / totalChars) * TARGET_TOTAL_MS;
+				acc += dur + LINE_START_GAP_MS;
 
-				// Small pause at the start of each line
-				if (charIndex > 0) {
-					await new Promise<void>((r) => {
-						timer = window.setTimeout(r, LINE_START_GAP_MS);
-					});
-				}
+				timers.push(
+					window.setTimeout(() => {
+						line.el.setAttribute("data-shown", "");
+						line.el.setAttribute("data-active", "");
 
-				// Reveal characters within this line's spans
-				let revealed = 0;
-				for (const span of spans) {
-					const spanText = span.textContent ?? "";
-					span.style.visibility = "hidden";
+						const total = Math.max(line.length, 1);
+						let before = 0;
+						for (const span of line.spans) {
+							const spanText = span.textContent ?? "";
+							const len = spanText.length;
+							if (len === 0) continue;
+							const delayK = (before / total) * dur;
+							const durK = (len / total) * dur;
+							span.style.transition = "none";
+							span.style.clipPath = "inset(0 100% 0 0)";
+							span.style.visibility = "visible";
+							// commit the hidden state before starting the wipe
+							void line.el.offsetWidth;
+							span.style.transition = `clip-path ${durK}ms linear ${delayK}ms`;
+							span.style.clipPath = "inset(0 0 0 0)";
+							before += len;
+						}
 
-					for (let i = 0; i < spanText.length; i++) {
-						// Show this span up to character i+1 by clipping
-						span.style.visibility = "visible";
-						span.style.clipPath = `inset(0 ${spanText.length - i - 1}ch 0 0)`;
-						revealed++;
-						charIndex++;
-						await new Promise<void>((r) => {
-							timer = window.setTimeout(r, charDelay);
-						});
-					}
-					// Fully reveal this span
-					span.style.clipPath = "";
-				}
-
-				el.removeAttribute("data-active");
+						// line done: clear the cursor and the inline styles
+						timers.push(
+							window.setTimeout(() => {
+								line.el.removeAttribute("data-active");
+								for (const span of line.spans) {
+									span.style.transition = "";
+									span.style.clipPath = "";
+								}
+							}, dur),
+						);
+					}, startAt),
+				);
 			}
-
-			finish();
+			timers.push(
+				window.setTimeout(() => {
+					timers.forEach((t) => window.clearTimeout(t));
+					finish();
+				}, acc),
+			);
 		}
 
 		function finish() {
+			timers.forEach((t) => window.clearTimeout(t));
+			// Per-line cleanup timers may have been cancelled above — strip any
+			// remaining active-line state so no stray cursors survive.
+			for (const { el, spans } of lineData) {
+				el.removeAttribute("data-active");
+				for (const span of spans) {
+					span.style.transition = "";
+					span.style.clipPath = "";
+				}
+			}
 			streaming = false;
 			root.removeAttribute("data-streaming");
 			root.setAttribute("data-done", "");
@@ -381,13 +407,20 @@ const normalized: Part[][] = lines.map((line) => {
 		document.addEventListener(
 			"astro:before-swap",
 			() => {
-				window.clearTimeout(timer);
+				timers.forEach((t) => window.clearTimeout(t));
 			},
 			{ once: true },
 		);
 	}
 
-	document
-		.querySelectorAll<HTMLElement>("[data-terminal]")
-		.forEach((root) => setupTerminal(root));
+	// Init now and on every Astro view-transition navigation — module scripts
+	// execute once per page session, so client-side routed pages would else
+	// keep a stale setup (or none at all) for their terminals.
+	const initTerminals = () => {
+		document
+			.querySelectorAll<HTMLElement>("[data-terminal]:not([data-inited])")
+			.forEach((root) => setupTerminal(root));
+	};
+	initTerminals();
+	document.addEventListener("astro:page-load", initTerminals);
 </script>
