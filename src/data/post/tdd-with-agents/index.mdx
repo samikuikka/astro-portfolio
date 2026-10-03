@@ -1,0 +1,73 @@
+---
+publishDate: 2026-10-03T00:00:00Z
+title: "TDD in the age of agents"
+excerpt: "The original TDD, test modules, one test per unit of code, is dead now that LLMs write most of the code. But TDD as a discipline didn't die; it moved up an abstraction layer"
+image: "./title.png"
+tags:
+  - TDD
+  - Apo
+---
+import CodeBlock from "../../../components/blog/CodeBlock.astro";
+import Tweet from "../../../components/blog/Tweet.astro";
+import apoChecks from "./apo-checks.ts?raw";
+
+# TDD in the age of agents
+
+I saw this tweet:
+
+<Tweet id="https://x.com/iamdevloper/status/2105923010524033286" />
+
+and it made me realize, a lot of old ways are dead; however, the concepts are still blooming, while something goes away, something new emerges. This is the same for test-driven development.
+
+TL;DR TDD in its original concept of creating test files for individual code is obsolete; LLMs do not work that way, and there is no direct benefit of doing it. However, going an abstraction layer up from individual code to the behaviour of the harness, TDD is still a very powerful tool.
+
+## Original TDD
+
+Let's go back to the core idea of the original TDD. What is meant by test-driven development is that you start with the tests, write an initial test that fails, and wish your application to work, then make changes until the test passes.
+
+This is actually a back-and-forth development style, not first writing all the tests, then creating the implementation, but step by step creating a test, making it pass, creating more on top of it, making them pass, until we have arrived at the wanted implementation.
+
+So we can think of it like a "loop" for developing software at the very smallest abstraction level in the implementation process; what I mean by that is that we write the smallest next thing we wish to do and make it work, and then actually implement it.
+
+This has been a great way to develop software for decades, and it has to do with how we humans work and how many things we can remember. The power of TDD for us humans comes from the fact that we can't really remember tons of information at any moment. So what TDD achieves is that we have only a very small part of the problem done as a test, and now need to implement only that small part.
+
+If done right, we humans only need to remember a small amount of information on what the next steps we need to do are.
+
+But what happens when the implementor is an agent without these human weaknesses?
+
+## Agents in the original TDD
+
+Now, almost everybody uses an agent to write the code. Agents are not humans, so the behaviour we can expect from them is also different.
+
+While humans have a hard time keeping a lot of details in their head at once, agents can usually work with much larger pieces of the implementation at the same time. They can inspect the codebase, write multiple tests, implement the feature, run the tests, and iterate on failures without us guiding every tiny step.
+
+This changes the useful abstraction level of TDD. We don't necessarily need to tell the agent: first make this one small test pass, then write the next one. We can specify a much larger piece of behaviour and let the agent work out the implementation.
+
+So the original way of TDD development was designed mostly for humans to work more efficiently and make sure the implementation matches our expectations.
+
+And I agree with the tweet on this point: TDD in the *original* way of working on simple test files for code files is obsolete. Agents do not need this "loop"-like behaviour for implementing features. They have all the information in their memory all the time. This doesn't mean the implementation doesn't need tests, but that the process for writing these tests does not need to match the one that was specifically designed for our weaknesses.
+
+What becomes more useful is testing at the behaviour level. Instead of us working on the individual code level, we can specify what the system should actually do and let the implementation underneath it change freely.
+
+These tests might be integration tests, end-to-end tests, or something else. The important part is that they describe the capability we want, instead of the exact structure of the code.
+
+
+## TDD in higher abstraction levels
+
+While TDD is dead in its original context, the same idea can be used in higher abstraction layers. Just like agents let us create software at a higher abstraction, TDD and its loop can be worked on at higher abstraction.
+
+I have been using TDD in harness engineering. What I mean by that is that when we want our system to start changing towards our wanted behaviour, we create tests like in TDD, first specifying how we wish our agents to behave in different scenarios.
+
+After that, we run the system and see if the current system passes our tests. If it doesn't, we modify the harness and run again.
+
+But here, we can also have a similar iterative process to harness engineering. First the test in TDD is small, but once we run and analyze the system's traces, we can iterate on the behaviour until the system finally behaves the way we wish it to.
+
+I'll do this with Apo, where we create deterministic and non-deterministic tests that instead of saying how the code should work, specify how the agent should behave:
+
+<CodeBlock
+	title="document-qa.eval.ts"
+	lang="ts"
+	code={apoChecks}
+/>
+
+Now I get the information if the harness is passing the tests, and can iterate with the TDD approach towards even better tests. So, I don't believe TDD is obsolete; it just moved from the unit of implementation specification to the observable behaviour of the system.

@@ -1,0 +1,349 @@
+---
+/**
+ * Tweet — a static tweet embed, rendered entirely at build time.
+ *
+ * Pass a tweet URL or bare status id. Tweet data is fetched from Twitter's
+ * syndication API (the same endpoint react-tweet uses) during the Astro
+ * build — no client script, no widgets.js, no runtime call to X. The card
+ * stays hotlink-free too: if a data cache exists, it is used instead of the
+ * network, and the author avatar is inlined as a data URI from its cached
+ * sidecar file. If neither cache nor network produces data, the component
+ * degrades to a LinkCard-style link to the tweet.
+ *
+ * Caching (recommended, keeps builds offline-safe and immune to API rot):
+ *   src/data/tweets/<id>.json         — syndication API response
+ *   src/data/tweets/<id>.avatar.jpg   — author avatar (any size; shown at 44px)
+ *
+ * Text tweets only: link/quote/photo attachments are not rendered (the text
+ * already stands alone in most quoted posts).
+ */
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { Icon } from "astro-icon/components";
+
+interface Props {
+	/** Tweet URL (x.com/twitter.com) or bare numeric status id. */
+	id: string;
+}
+
+interface SyndicationUser {
+	name?: string;
+	screen_name?: string;
+	is_blue_verified?: boolean;
+	profile_image_url_https?: string;
+}
+
+interface SyndicationTweet {
+	id_str?: string;
+	text?: string;
+	created_at?: string;
+	display_text_range?: [number, number];
+	favorite_count?: number;
+	conversation_count?: number;
+	user?: SyndicationUser;
+}
+
+const CACHE_DIR = join(process.cwd(), "src", "data", "tweets");
+
+function parseId(input: string): { id: string; handle?: string } {
+	const match = input.match(/(?:^|[/?=])(\d{6,})/);
+	const handle = input.match(/^https?:\/\/(?:www\.)?(?:x|twitter)\.com\/([^/]+)\//i)?.[1];
+	return { id: match?.[1] ?? input.replace(/\D/g, ""), handle };
+}
+
+// The syndication API demands a token; any deterministic garbage derived from
+// the id works. This is the same formula react-tweet ships, just base-36.
+function syndicationUrl(id: string): string {
+	const token = ((Number(id) / 1e15) * Math.PI).toString(36).replace(/(0+|\.)/g, "");
+	return `https://cdn.syndication.twimg.com/tweet-result?id=${id}&lang=en&token=${token}`;
+}
+
+async function loadTweet(id: string): Promise<SyndicationTweet | null> {
+	const cacheFile = join(CACHE_DIR, `${id}.json`);
+	if (existsSync(cacheFile)) {
+		try {
+			return JSON.parse(readFileSync(cacheFile, "utf8"));
+		} catch {
+			// Corrupt cache — fall through to the network.
+		}
+	}
+	try {
+		const response = await fetch(syndicationUrl(id), {
+			headers: { "user-agent": "samikuikka.com tweet embed builder" },
+		});
+		if (!response.ok) return null;
+		const tweet = (await response.json()) as SyndicationTweet;
+		return tweet.id_str === id ? tweet : null;
+	} catch {
+		return null;
+	}
+}
+
+// Prefer the cached avatar inlined as a data URI (no request to pbs.twimg.com
+// from readers); fall back to hotlinking the API's URL.
+function loadAvatar(id: string, url?: string): string {
+	const sidecar = join(CACHE_DIR, `${id}.avatar.jpg`);
+	if (existsSync(sidecar)) {
+		return `data:image/jpeg;base64,${readFileSync(sidecar).toString("base64")}`;
+	}
+	return url?.replace("_normal.", "_bigger.") ?? "";
+}
+
+const { id: parsedId, handle: parsedHandle } = parseId(Astro.props.id);
+const tweet = await loadTweet(parsedId);
+
+const user = tweet?.user ?? {};
+const handle = user.screen_name ?? parsedHandle ?? "x";
+const name = user.name ?? handle;
+const tweetUrl = `https://x.com/${handle}/status/${parsedId}`;
+const avatar = loadAvatar(parsedId, user.profile_image_url_https);
+
+const unescape = (s: string) =>
+	s
+		.replace(/&lt;/g, "<")
+		.replace(/&gt;/g, ">")
+		.replace(/&quot;/g, '"')
+		.replace(/&#39;/g, "'")
+		.replace(/&amp;/g, "&");
+
+const escapeHtml = (s: string) =>
+	s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+// The syndication API returns HTML-escaped text whose t.co shorteners and
+// trailing media URLs sit outside display_text_range. Unescape first (ranges
+// count real characters), cut to the displayed part, then make the surviving
+// text safe and give it the light markup X itself renders.
+function renderText(tweet: SyndicationTweet): string[] {
+	const raw = unescape(tweet.text ?? "");
+	const end = tweet.display_text_range?.[1];
+	const visible = end ? raw.slice(0, end) : raw;
+	return visible
+		.split(/\n{2,}/)
+		.filter((paragraph) => paragraph.trim().length > 0)
+		.map((paragraph) =>
+			escapeHtml(paragraph.trim())
+				.replace(/&lt;a href="[^"]*"&gt;|&lt;\/a&gt;/g, "")
+				// *emphasis* — X renders single-asterisk emphasis
+				.replace(/\*([^*\n]+)\*/g, "<em>$1</em>")
+				.replace(/(https?:\/\/\S+)/g, '<a href="$1" rel="noopener noreferrer">$1</a>')
+				.replace(/(^|\s)@(\w+)/g, '$1<a href="https://x.com/$2" rel="noopener noreferrer">@$2</a>')
+				.replace(/(^|\s)#(\w+)/g, '$1<a href="https://x.com/search?q=%23$2" rel="noopener noreferrer">#$2</a>')
+				.replace(/\n/g, "<br />"),
+		);
+}
+
+const paragraphs = tweet ? renderText(tweet) : [];
+
+const compact = (n?: number) =>
+	typeof n !== "number" ? "" : n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e4 ? `${Math.round(n / 1e3)}K` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}K` : String(n);
+
+const postedAt = tweet?.created_at ? new Date(tweet.created_at) : undefined;
+const dateLabel = postedAt?.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+const timeLabel = postedAt?.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "UTC" });
+---
+
+<a class="tweet not-prose" href={tweetUrl} target="_blank" rel="noopener noreferrer">
+	{
+		tweet ? (
+			<>
+				<div class="tweet__header">
+					<img class="tweet__avatar" src={avatar} alt="" width="44" height="44" loading="lazy" decoding="async" />
+					<div class="tweet__author">
+						<span class="tweet__name">
+							{name}
+							{user.is_blue_verified && <Icon name="tabler:circle-check-filled" class="tweet__verified" aria-label="Verified" />}
+						</span>
+						<span class="tweet__handle">@{handle}</span>
+					</div>
+					<svg class="tweet__logo" viewBox="0 0 24 24" aria-hidden="true">
+						<path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+					</svg>
+				</div>
+				<div class="tweet__text">
+					{paragraphs.map((html) => <p set:html={html} />)}
+				</div>
+				<div class="tweet__meta">
+					<time datetime={tweet.created_at}>{dateLabel}{timeLabel && ` · ${timeLabel} UTC`}</time>
+					{(tweet.favorite_count || tweet.conversation_count) && (
+						<span class="tweet__stats">
+							{tweet.conversation_count ? (
+								<span class="tweet__stat">
+									<Icon name="tabler:message-circle-2-filled" />
+									{compact(tweet.conversation_count)}
+								</span>
+							) : null}
+							{tweet.favorite_count ? (
+								<span class="tweet__stat">
+									<Icon name="tabler:heart-filled" />
+									{compact(tweet.favorite_count)}
+								</span>
+							) : null}
+						</span>
+					)}
+				</div>
+			</>
+		) : (
+			<div class="tweet__fallback">
+				<span class="tweet__fallback-title">View this post on X</span>
+				<span class="tweet__fallback-url">x.com/{handle}/status/{parsedId}</span>
+			</div>
+		)
+	}
+</a>
+
+<style>
+	.tweet {
+		display: flex;
+		flex-direction: column;
+		gap: 0.8rem;
+		margin: 1.5rem 0;
+		padding: 1rem 1.1rem 0.85rem;
+		border: 1px solid #232838;
+		border-radius: 0.5rem;
+		background: #0b0e16;
+		color: #e6e9f2;
+		text-decoration: none;
+		transition: border-color 150ms ease;
+	}
+
+	.tweet:hover {
+		border-color: #3a4154;
+	}
+
+	.tweet__header {
+		display: flex;
+		align-items: center;
+		gap: 0.7rem;
+	}
+
+	.tweet__avatar {
+		width: 44px;
+		height: 44px;
+		border-radius: 9999px;
+		flex-shrink: 0;
+		background: #232838;
+	}
+
+	.tweet__author {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		line-height: 1.3;
+	}
+
+	.tweet__name {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		font-family: var(--aw-font-sans, ui-sans-serif, system-ui, sans-serif);
+		font-size: 0.95rem;
+		font-weight: 600;
+		color: #e6e9f2;
+	}
+
+	.tweet__verified {
+		width: 1rem;
+		height: 1rem;
+		color: #1d9bf0;
+		flex-shrink: 0;
+	}
+
+	.tweet__handle {
+		font-family: var(--aw-font-sans, ui-sans-serif, system-ui, sans-serif);
+		font-size: 0.85rem;
+		color: #8b93a7;
+	}
+
+	.tweet__logo {
+		width: 1.15rem;
+		height: 1.15rem;
+		margin-left: auto;
+		fill: #6b7488;
+		flex-shrink: 0;
+	}
+
+	.tweet__text {
+		font-family: var(--aw-font-sans, ui-sans-serif, system-ui, sans-serif);
+		font-size: 1rem;
+		line-height: 1.55;
+		color: #e6e9f2;
+	}
+
+	.tweet__text p {
+		margin: 0;
+	}
+
+	.tweet__text p + p {
+		margin-top: 0.75rem;
+	}
+
+	.tweet__text em {
+		font-style: italic;
+	}
+
+	.tweet__text a {
+		color: #4c9ffe;
+		text-decoration: none;
+	}
+
+	.tweet__text a:hover {
+		text-decoration: underline;
+	}
+
+	.tweet__meta {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding-top: 0.7rem;
+		border-top: 1px solid #232838;
+		font-family: var(--aw-font-sans, ui-sans-serif, system-ui, sans-serif);
+		font-size: 0.8rem;
+		color: #6b7488;
+	}
+
+	.tweet__stats {
+		display: inline-flex;
+		align-items: center;
+		gap: 1rem;
+	}
+
+	.tweet__stat {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+	}
+
+	.tweet__stat :global(svg) {
+		width: 0.85rem;
+		height: 0.85rem;
+	}
+
+	.tweet__stat:first-child :global(svg) {
+		color: #8b93a7;
+	}
+
+	.tweet__stat:last-child :global(svg) {
+		color: #f91880;
+	}
+
+	.tweet__fallback {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+		padding: 0.35rem 0;
+	}
+
+	.tweet__fallback-title {
+		font-family: var(--aw-font-sans, ui-sans-serif, system-ui, sans-serif);
+		font-size: 0.95rem;
+		font-weight: 600;
+		color: #e6e9f2;
+	}
+
+	.tweet__fallback-url {
+		font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", monospace;
+		font-size: 0.75rem;
+		color: #6b7488;
+	}
+</style>
