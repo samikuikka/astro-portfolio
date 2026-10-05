@@ -1,0 +1,86 @@
+---
+publishDate: 2026-10-05T00:00:00Z
+title: "Escalating Evals: 72% Fewer LLM Judge Calls"
+excerpt: "The cheapest LLM-as-judge is not doing the judge at all! While the Jev output is not on-par with the LLM-as-judge, using it with escalation gives us great cost saving with small amount of difference in verdicts"
+image: "./confidence-bands.png"
+tags:
+  - Evals
+  - Apo
+  - Jev
+---
+import CodeBlock from "../../../components/blog/CodeBlock.astro";
+import cascadeEnv from "./cascade-env.sh?raw";
+import cascadePerTest from "./cascade-per-test.ts?raw";
+import cascadePerTask from "./cascade-per-task.ts?raw";
+import cascadeDemo from "./cascade-demo.txt?raw";
+import Latex from '../../../components/common/Latex.astro';
+
+
+# Escalating Evals: 72% Fewer LLM Judge Calls
+
+I have been thinking and experimenting a lot with the LLM-as-judge in my evals.
+One thing that has been on my mind is the price.  I have spent time with [Apo](https://docs.test-apo.online/) to make sure similar judge calls maximize the prompt-cache hits, because when you're running hundreds or thousands of acceptance checks, the cost starts to matter.
+But there is an even cheaper way than cached calls:
+
+**Not making the call at all!**
+
+In my Jev-as-judge [blog](https://www.samikuikka.com/en/blog/jev-as-judge/) I talked about how to use Jev as a confidence signal besides the LLM-as-judge. However, we can also use it as a replacement for the high confidence checks. This way we can escalate the harder checks to the LLM-as-judge and keep high confidence checks only on Jev.
+
+And this blog is about that. How it helps? How is the output quality? How it compares to the old way of handling?
+
+TL;DR Escalating Jev is a trade-off, we would have higher score by just having LLM-as-judge, but having Jev as initial check makes the tests cheaper without changing many verdicts compared with the LLM-as-judge.
+
+
+## Jev as escalation step
+
+What I in my previous Jev blog showed, is that when Jev is very confident in its answer (>=0.95 confidence), it agrees with my LLM-as-judge result 99.5% of the time!
+
+So the question is, why not just use Jev in these situations, why I'm paying for LLM-as-judge when the Jev is confident. 
+
+And that is exactly what my new Apo judge mode is about: Escalating to the LLM when it is needed, keeping Jev as initial scorer.
+
+In my testing, 72% of all the checks were these confident answers, so we can make most of the checks that run shown with only the Jev check on the tests I previously did. This is massive savings on money, around 70% cheaper judging overall by removing the 72% of the checks with the Jev only result.
+
+And that is the new Apo mode:
+
+
+<CodeBlock title="my-task.eval.ts" lang="ts" code={cascadePerTest} />
+
+<CodeBlock title="sla-review.eval.ts" lang="ts" code={cascadePerTask} />
+
+
+
+## Escalation won't improve the score
+
+When we start comparing the score of escalation to only using LLM-as-judge, we know that the score won't improve. And there is already [research](https://arxiv.org/pdf/2609.29769) on this topic.
+
+When the cheap judge is confidently wrong, the LLM-as-judge is also 96% of the time wrong on the same check. So it's not like Jev itself is any better judge.
+
+What the overall score is when cascading:
+
+<Latex formula="\mathrm{Acc}_{\text{cascade}} = (1 - \varepsilon) \cdot \mathrm{Acc}_{\text{Jev}}^{\text{confident}} + \varepsilon \cdot \mathrm{Acc}_{\text{LLM-as-judge}}" />
+
+where ε is the escalation rate, so 1 − ε = 72% is the share Jev settles alone
+
+The Jev part is incredibly cheap, so the more checks Jev settles on its own (the lower ε is), the cheaper the tests.
+
+However, score is something like this:
+
+<Latex formula="\mathrm{Acc}_{\text{Jev only}} \;<\; \mathrm{Acc}_{\text{cascade}} \;\approx\; \mathrm{Acc}_{\text{LLM-as-judge}}" />
+
+and
+
+<Latex formula="\left| \mathrm{Acc}_{\text{cascade}} - \mathrm{Acc}_{\text{LLM-as-judge}} \right| \;\leq\; (1 - \varepsilon) \cdot d \;=\; 0.72 \times 0.005 \;\approx\; 0.4\%" />
+
+This calculation is actually interesting, it shows, from my own data, the upper bound on how many verdicts can differ from the LLM-only setup. Only 0.4%!
+What that means is that when Jev is confident, and the LLM verdicts differ, that is just 0.5% of the confident 72%, about 0.4% of all checks. Otherwise the output quality is the same as running the LLM-as-judge only!
+
+I find this very convincing: roughly 70% cheaper judging, while at most 0.4% of the verdicts can differ from what running only the LLM-as-judge would have said. Which way those few verdicts go, better or worse, I can't tell without labeled ground truth. The score could even go up, if Jev is right where the LLM judge was wrong. I think that's worth the trade off.
+
+## Try It Out
+
+The new mode is now in Apo! And I'm quite hyped about it, I can get the cost of the judging much lower, without losing much of the quality.
+
+But it's not by default. I still believe that running both can be helpful, even if the current data that shows it is convincing.
+
+But all this has to do with the quality of the checks. If the LLM-as-judge checks are done well, the escalation rate will get higher and higher, and we can enjoy cheaper evals!

@@ -1,0 +1,14 @@
+# old way: LLM judges everything, Jev corroborates
+apo task run judge-flip-probe
+  Checks: 4 PASS · 6 FAIL
+  Second judge: 10 corroborated
+
+# cascade: same task, same memo
+APO_JUDGE_MODE=cascade apo task run judge-flip-probe
+  FAIL quantifies-synergies
+    Verdict by second judge (cascade): fail · confidence 1 · p(pass) 0.
+    Primary judge not called.
+  FAIL regulatory-timeline
+    Verdict by second judge (cascade): fail · confidence 0.99 · p(pass) 0.
+    Primary judge not called.
+  Second judge: 9 corroborated · 1 unsure
