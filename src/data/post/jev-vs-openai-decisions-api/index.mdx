@@ -1,0 +1,102 @@
+---
+publishDate: 2026-10-07T00:00:00Z
+title: "Jev vs OpenAI Decisions: 2,094 Real Eval Checks"
+excerpt: "Does it matter what System One model you should be using? On same tasks, how well do Jev and OpenAI's Decision API agree, and which one turns out to be stronger"
+image: "./flip-matrix.png"
+tags:
+  - Evals
+  - Apo
+  - Jev
+---
+import CodeBlock from "../../../components/blog/CodeBlock.astro";
+import Latex from '../../../components/common/Latex.astro';
+import { Image } from 'astro:assets';
+import agreement from './agreement.png';
+import confidenceAgreement from './confidence-agreement.png';
+import flipMatrix from './flip-matrix.png';
+
+
+# Jev vs OpenAI Decisions: 2,094 Real Eval Checks
+
+I have been now using Jev ([TypeSafe AI](https://typesafe.ai/)) already quite some time for my eval work. But since the launch, there have arrived competition in this category of models, now most recent the OpenAI's Decision API, that they have framed as their answer to the Jev.
+
+I already had data from my previous experiments testing Jev and from my real life use of Jev in evals, so it was naturally easy to start compare the output with the Luna on Decision API to see the difference.
+
+So I tested my 2094 judged Apo checks from my previous blog with the Jev. Each check was real agent deliverable with pass/fail criterion + the original LLM-as-judge verdict. Turns out, your model on this actually matters, and you shouldn't just change your decision model without understanding the trade offs.
+
+## Decision Results
+
+|  | Jev pass | Jev fail |  | Luna pass | Luna fail |
+| --- | --- | --- | --- | --- | --- |
+| Judge pass | 1,860 | 68 |  | 1,707 | 221 |
+| Judge fail | 11 | 155 |  | 8 | 158 |
+
+### Agreement with my Judge
+
+When we start looking at that table, we notice that there is really outlier result from the Luna, and that is the disagreements with the LLM-as-judge.
+
+When Jev only disagreed 79 times out of 2094, the same checks on the Luna disagreed 229 times! Reminder: agreement doesn't automatically mean correctness, however [research](https://arxiv.org/pdf/2609.29769) on the topic and my previous blog also argue that LLM judge wins these decision models on the verdict quality, but not in the cost.
+
+On my evals, Jev is considerably more consistent with my existing LLM-as-judge than Luna. Whether that means Jev is more accurate is another question, but for my use case, where I'm trying to reduce the cost of an existing evaluation pipeline without changing its verdicts, that matters.
+
+ ### Luna's disagreement is almost one-directional
+
+ But when we look at where the failures are, they are in the Judge passed, Luna failed category. So the Luna is much harsher grader. 
+
+It could be my judge's leniency, or over-strictness from the Luna's side, but what we know is that Luna is consistently giving different verdict, and being confident in its output.
+
+### Cost
+
+Well, what also should be interesting for us is the cost.
+And ofc, this just has to do with the pricing. Luna being 0.10/M input, and Jev 0.042/M input cost.
+So it's around double the price for Luna, in my case Jev was around 0.20$, while Luna 0.41$ for grading all of my judges.
+
+However, both of them are very cheap when compared to running with the LLM-as-judge.
+
+
+### Latency
+
+From my small testing, Luna actually won the latency from the measurements, it being p50 0.26s and p95 0.55s, while the Jev was p50 0.34s and p95 0.48s.
+
+Both are so fast on their tasks that for this use-case it did not matter at all. Especially when we start to compare to the LLM calls, it starts to matter less if it's 0.26s or 0.34s.
+
+### Confidence on their outputs
+
+| Confidence | Jev: share, agreement | Luna: share, agreement |
+| --- | --- | --- |
+| >= 0.95 | 71.7% of checks, 99.5% agree | 53.3% of checks, 95.2% agree |
+| 0.60-0.95 | 20.2%, 94.5% | 33.0%, 90.2% |
+| < 0.60 | 8.2%, 71.3% | 13.7%, 62.7% |
+
+
+One thing that interesting for me is also the confidence.
+And this is especially important when we think about how escalating to the LLM-as-judge works. Higher the confidence, less LLM-as-judge checks we need, and more of the evals can be just handled on cheap System One models.
+
+And here we see the Jev is much more confident in its answers.
+Luna is softer in every band of the table.
+
+It's not really fair to say which one is better in terms of that. But for my cost effectiveness, and given that most of those checks were then consistent with the LLM-as-judge result on the confident band, the Jev wins this also by a lot.
+
+### How much they agree on each other
+
+|  | Luna agrees | Luna disagrees |
+| --- | --- | --- |
+| Jev agrees | 1,841 (87.9%) | 174 |
+| Jev disagrees | 24 | 55 |
+
+This is also interesting to know. 69.6% of the Jev flips, Luna also flips them.
+So this could tell something about the evals, if both cheap models like to flip, maybe there is problems on the LLM-as-judge, I don't mean necessarily LLM-as-judge is wrong, but at least it differs from the LLM-as-judge that I'm more inclined to believe.
+
+
+## Some thoughts
+
+While the agreement on these models do not mean correctness, it has been enough for at least in my use-cases to stick with the Jev when possible.
+There's also the situation where the context window too large for Jev where I could consider the Luna, but overall, in my eval work, these things make up my mind on it:
+
+- Cheaper checks on Jev
+- More confident in its verdicts (even more cheaper when used with escalation)
+- More agreement on the baseline LLM-as-judges
+
+But what this should show you is that you should at least try it in your use-case before adopting. There is difference, and the difference is not small between the models. But when it comes to the models, every choice is also a trade off when we talking about these pareto frontier models on their own category.
+
+While the two models are designed for similar decision-making workloads, on same tasks they can produce very different verdict distribution. It's not model that you can just swap to each other without getting difference.
