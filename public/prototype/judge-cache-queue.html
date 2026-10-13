@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Per-prefix judge queue</title>
+<style>
+  /* apo design language: pure black, gray hierarchy, square corners,
+     color only as state (amber = write, green = read / warm). */
+  :root {
+    --bg: #000;
+    --panel: #161616;
+    --muted: #1c1c1c;
+    --border: #292929;
+    --border-soft: #212121;
+    --fg: #ededed;
+    --fg2: #8a8a8a;
+    --faint: #5c5c5c;
+    --red: #cf4c4c;
+    --green: #4db168;
+    --amber: #d7a13e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0 !important; }
+  html, body { background: var(--bg); }
+  body { font-family: "Noto Sans", ui-sans-serif, system-ui, sans-serif; padding: 16px 18px 20px; cursor: pointer; }
+
+  .wrap { max-width: 860px; margin: 0 auto; }
+  .chart { position: relative; border: 1px solid var(--border); background: var(--panel); overflow: hidden; }
+
+  .axis { display: flex; margin-left: 92px; border-bottom: 1px solid var(--border-soft); position: relative; height: 22px; }
+  .axis .tick { position: absolute; top: 4px; font-size: 10px; color: var(--faint); transform: translateX(-50%); font-family: ui-monospace, monospace; }
+  .grid { position: absolute; top: 22px; bottom: 0; left: 92px; right: 0; pointer-events: none; }
+  .gridline { position: absolute; top: 0; bottom: 0; width: 1px; background: #1e1e1e; }
+
+  .grp { padding: 8px 12px 10px 0; }
+  .grp-head { display: flex; align-items: baseline; gap: 8px; margin: 2px 0 6px 12px; }
+  .grp-title { font-size: 12px; font-weight: 600; color: var(--fg); }
+  .grp-title .mark { font-weight: 600; margin-right: 5px; }
+  .grp-title .mark.good { color: var(--green); }
+  .grp-count { margin-left: auto; font-size: 11px; color: var(--fg2); font-family: ui-monospace, monospace; }
+  .grp-count b { font-weight: 600; font-size: 12.5px; margin-left: 5px; }
+  .grp-count b.good { color: var(--green); }
+
+  .row { display: flex; align-items: center; height: 30px; }
+  .row .lbl { flex: 0 0 80px; text-align: right; padding-right: 12px; font-size: 10.5px; color: var(--faint); font-family: ui-monospace, monospace; }
+  .row .track { flex: 1; position: relative; height: 100%; }
+
+  .bar { position: absolute; top: 6px; height: 18px; width: 0; background: linear-gradient(180deg, #3d3d3d, #303030); }
+  .bar.running { background: linear-gradient(180deg, #6d6d6d, #585858); }
+  .bar.done-write { background: linear-gradient(180deg, #77602f, #5e4a24); }
+  .bar.done-read { background: linear-gradient(180deg, #2e7a4f, #235f3e); }
+
+  .ghost {
+    position: absolute; top: 6px; height: 18px; opacity: 0;
+    border: 1px dashed #3a3a3a; background: repeating-linear-gradient(45deg, #1a1a1a 0 7px, #141414 7px 14px);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ghost.on { opacity: .55; }
+  .ghost::after {
+    content: "waiting"; font-size: 9px; color: #6a6a6a; letter-spacing: .5px;
+    font-family: ui-monospace, monospace; opacity: 0; transition: opacity .3s ease;
+  }
+  .ghost.on::after { opacity: 1; }
+
+  .chip {
+    position: absolute; top: 5px; height: 20px; padding: 0 7px; display: none; align-items: center;
+    font-family: ui-monospace, monospace; font-size: 10.5px; white-space: nowrap;
+  }
+  .chip.show { display: inline-flex; animation: pop .3s ease; }
+  .chip.write { color: var(--amber); border: 1px solid #d7a13e66; background: #d7a13e1a; }
+  .chip.read { color: var(--green); border: 1px solid #4db16866; background: #4db1681a; }
+  @keyframes pop { from { transform: scale(.85); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  .playhead { position: absolute; top: 0; bottom: 0; left: 92px; width: 1px; background: #ededed88; pointer-events: none; display: none; }
+  .playhead.on { display: block; }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="chart" id="chart">
+    <div class="axis" id="axis"></div>
+    <div class="grid" id="grid"></div>
+
+    <div class="grp">
+      <div class="grp-head">
+        <span class="grp-title"><span class="mark good">✓</span></span>
+        <span class="grp-count">billed<b class="good" id="count">0</b> tok</span>
+      </div>
+      <div class="row"><div class="lbl">check A</div><div class="track"><div class="bar" id="bar-q1"></div><div class="chip write" id="chip-q1">0/23,293 cached</div></div></div>
+      <div class="row"><div class="lbl">check B</div><div class="track">
+        <div class="ghost" id="ghost-q2"></div>
+        <div class="bar" id="bar-q2"></div><div class="chip read" id="chip-q2">23,158/23,293 cached</div>
+      </div></div>
+      <div class="row"><div class="lbl">check C</div><div class="track">
+        <div class="ghost" id="ghost-q3"></div>
+        <div class="bar" id="bar-q3"></div><div class="chip read" id="chip-q3">23,158/23,293 cached</div>
+      </div></div>
+    </div>
+
+    <div class="playhead" id="playhead"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const TOTAL = 3.6;   // time units (one judge call ≈ 1, checks vary)
+  const SEC = 1.3;     // real seconds per unit
+  const FULL = 23293, READ_COST = 135;
+  const GUTTER = 92;   // px, matches .axis/.grid/.playhead left
+
+  const el = (id) => document.getElementById(id);
+  const chart = el("chart");
+  let total = 0;
+  const fmt = (n) => n.toLocaleString("en-US");
+
+  function trackWidth() { return chart.getBoundingClientRect().width - GUTTER - 12; }
+  function pos(unit) { return ((unit / TOTAL) * trackWidth()) + "px"; }
+
+  for (let u = 1; u < TOTAL; u++) {
+    const pct = (u / TOTAL) * 100;
+    const tick = document.createElement("div");
+    tick.className = "tick"; tick.style.left = pct + "%"; tick.textContent = u + "×";
+    el("axis").appendChild(tick);
+    const g = document.createElement("div");
+    g.className = "gridline"; g.style.left = pct + "%";
+    el("grid").appendChild(g);
+  }
+
+  function startBar(id, start, len) {
+    const bar = el("bar-" + id);
+    bar.style.transition = "none";
+    bar.style.left = pos(start);
+    bar.style.width = "0px";
+    bar.classList.add("running");
+    void bar.offsetWidth;
+    bar.style.transition = "width " + (len * SEC) + "s linear";
+    bar.style.width = ((len / TOTAL) * trackWidth()) + "px";
+  }
+
+  function finishBar(id, cls, add, delayMs) {
+    const bar = el("bar-" + id);
+    bar.classList.remove("running");
+    bar.classList.add(cls);
+    total += add;
+    el("count").textContent = fmt(total);
+    const chip = el("chip-" + id);
+    chip.style.left = "calc(" + bar.style.left + " + " + bar.style.width + " + 8px)";
+    setTimeout(() => chip.classList.add("show"), delayMs || 0);
+  }
+
+  function setGhost(id, from, to, on) {
+    const g = el("ghost-" + id);
+    g.style.left = pos(from);
+    g.style.width = (((to - from) / TOTAL) * trackWidth()) + "px";
+    g.classList.toggle("on", on);
+  }
+
+  function reset() {
+    ["q1", "q2", "q3"].forEach((id) => {
+      const bar = el("bar-" + id);
+      bar.style.transition = "none"; bar.style.width = "0px"; bar.className = "bar";
+    });
+    for (let i = 1; i <= 3; i++) el("chip-q" + i).classList.remove("show");
+    total = 0;
+    el("count").textContent = "0";
+    const ph = el("playhead");
+    ph.classList.remove("on");
+    ph.style.transition = "none";
+    ph.style.transform = "translateX(0)";
+  }
+
+  const timers = [];
+  const at = (unit, fn) => timers.push(setTimeout(fn, unit * SEC * 1000));
+
+  function play() {
+    timers.forEach(clearTimeout); timers.length = 0;
+    reset();
+
+    setGhost("q2", 0.3, 1.35, true);
+    setGhost("q3", 0.3, 1.35, true);
+    at(0.3, () => startBar("q1", 0.3, 1));
+    at(1.3, () => finishBar("q1", "done-write", FULL, 0));
+    // once the prefix is warm, the rest fan out together
+    at(1.35, () => {
+      setGhost("q2", 0, 0, false);
+      setGhost("q3", 0, 0, false);
+      startBar("q2", 1.35, 1.25);
+      startBar("q3", 1.35, 0.85);
+    });
+    at(2.2, () => finishBar("q3", "done-read", READ_COST, 0));
+    at(2.6, () => finishBar("q2", "done-read", READ_COST, 0));
+
+    const ph = el("playhead");
+    void ph.offsetWidth;
+    ph.classList.add("on");
+    ph.style.transition = "transform " + (TOTAL * SEC) + "s linear";
+    ph.style.transform = "translateX(" + trackWidth() + "px)";
+  }
+
+  function staticEnd() {
+    const layout = { q1: [0.3, 1], q2: [1.35, 1.25], q3: [1.35, 0.85] };
+    const cls = { q1: "done-write", q2: "done-read", q3: "done-read" };
+    for (const [id, [s, len]] of Object.entries(layout)) {
+      const bar = el("bar-" + id);
+      bar.style.left = pos(s);
+      bar.style.width = ((len / TOTAL) * trackWidth()) + "px";
+      bar.classList.add(cls[id]);
+      const chip = el("chip-" + id);
+      chip.style.left = "calc(" + pos(s) + " + " + ((len / TOTAL) * trackWidth()) + "px + 8px)";
+      chip.classList.add("show");
+    }
+    total = FULL + 2 * READ_COST;
+    el("count").textContent = fmt(total);
+    setCache(true, true);
+  }
+
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    staticEnd();
+    let rt;
+    window.addEventListener("resize", () => {
+      clearTimeout(rt);
+      rt = setTimeout(staticEnd, 150);
+    });
+  } else {
+    let loop;
+    // never draw from a degenerate width (iframe still laying out / hidden)
+    const startLoop = () => {
+      if (trackWidth() < 120) return requestAnimationFrame(startLoop);
+      play();
+      loop = setInterval(play, (TOTAL + 1.1) * SEC * 1000);
+    };
+    const restart = () => {
+      clearInterval(loop);
+      play();
+      loop = setInterval(play, (TOTAL + 1.1) * SEC * 1000);
+    };
+    startLoop();
+    document.body.addEventListener("click", restart);
+    // positions are derived in px — re-derive them whenever the iframe
+    // resizes, but only once the width is sane (resize can fire at
+    // transient sizes mid-drag)
+    let rt, rt2, lastW = 0;
+    const safeRestart = () => {
+      const w = trackWidth();
+      if (w < 120) return setTimeout(safeRestart, 100);
+      if (w === lastW) return;
+      lastW = w;
+      restart();
+    };
+    window.addEventListener("resize", () => {
+      clearTimeout(rt);
+      rt = setTimeout(safeRestart, 150);
+      // a settle pass: resize can report transient widths mid-drag, so
+      // confirm once more at the final size
+      clearTimeout(rt2);
+      rt2 = setTimeout(safeRestart, 600);
+    });
+  }
+})();
+</script>
+</body>
+</html>

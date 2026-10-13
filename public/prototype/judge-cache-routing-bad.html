@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Same-prefix requests scattered across replicas</title>
+<style>
+  html, body { background: #000; margin: 0; }
+  body { font-family: "Noto Sans", ui-sans-serif, system-ui, sans-serif; padding: 14px 16px 16px; cursor: pointer; }
+  .wrap { max-width: 700px; margin: 0 auto; }
+</style>
+</head>
+<body>
+<div class="wrap"><div id="chart"></div></div>
+<script src="/prototype/router-flow.js"></script>
+<script>
+  // no routing key: the router spreads the same-prefix requests over every
+  // replica — each lands cold, re-bills the full prefix, and every write
+  // warms a cache no later call ever reads
+  RouterFlow.mount(document.getElementById("chart"), {
+    mark: "bad",
+    replicas: 3,
+    requests: [
+      { label: "A · no key", from: 0, to: 0, outcome: "miss",  billed: 23293, chip: "0/23,293 cached" },
+      { label: "B · no key", from: 1, to: 1, outcome: "miss",  billed: 23293, chip: "0/23,293 cached" },
+      { label: "C · no key", from: 2, to: 2, outcome: "miss",  billed: 23293, chip: "0/23,293 cached" },
+    ],
+  });
+</script>
+</body>
+</html>

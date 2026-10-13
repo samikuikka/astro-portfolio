@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cacheable judge prompt — shared prefix first</title>
+<style>
+  /* apo design language: pure black, gray hierarchy, square corners,
+     color only as state (amber = cache point, green = served from cache). */
+  :root {
+    --bg: #000;
+    --panel: #161616;
+    --muted: #1c1c1c;
+    --border: #292929;
+    --border-soft: #212121;
+    --fg: #ededed;
+    --fg2: #8a8a8a;
+    --faint: #5c5c5c;
+    --red: #cf4c4c;
+    --green: #4db168;
+    --amber: #d7a13e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0 !important; }
+  html, body { background: var(--bg); }
+  body { font-family: "Noto Sans", ui-sans-serif, system-ui, sans-serif; padding: 16px 18px 20px; cursor: pointer; }
+
+  .wrap { max-width: 860px; margin: 0 auto; }
+  .chart { position: relative; border: 1px solid var(--border); background: var(--panel); padding: 8px 12px 12px; overflow: hidden; }
+
+  .grp-head { display: flex; align-items: baseline; gap: 8px; margin: 2px 0 8px; }
+  .grp-title { font-size: 12px; font-weight: 600; color: var(--fg); }
+  .grp-title .mark { font-weight: 600; margin-right: 5px; }
+  .grp-title .mark.good { color: var(--green); }
+  .grp-count { margin-left: auto; font-size: 11px; color: var(--fg2); font-family: ui-monospace, monospace; }
+  .grp-count b { font-weight: 600; font-size: 12.5px; margin-left: 5px; }
+  .grp-count b.good { color: var(--green); }
+
+  .request { display: flex; align-items: stretch; height: 64px; }
+  .blk { position: relative; display: flex; align-items: center; justify-content: center; font-size: 11px; font-family: ui-monospace, monospace; transition: box-shadow .4s ease, background .4s ease, border-color .4s ease; }
+
+  .briefing { background: #262626; flex: 0 0 96px; color: var(--fg2); }
+  .deliverable { background: var(--muted); border: 1px solid var(--border); flex: 1 1 auto; color: var(--fg); justify-content: flex-start; padding-left: 12px; }
+
+  /* after the first check the shared prefix is served from cache */
+  .cached.briefing { background: #17211b; box-shadow: inset 0 0 0 1px #4db16855; }
+  .cached.deliverable { background: #142018; border-color: #2c5a3d; box-shadow: inset 0 0 0 1px #4db16855; }
+
+  .bp { position: absolute; right: -1px; top: 0; bottom: 0; width: 3px; background: var(--amber); }
+  .bp::after {
+    content: "cache point"; position: absolute; top: -19px; right: 0;
+    font-size: 10px; color: var(--amber); white-space: nowrap; font-family: ui-monospace, monospace;
+  }
+
+  .cut { flex: 0 0 26px; position: relative; }
+  .cut::before { content: ""; position: absolute; left: 50%; top: -8px; bottom: -8px; border-left: 1px dashed #3a3a3a; }
+
+  .instr-slot { flex: 0 0 118px; position: relative; }
+  .instr {
+    position: absolute; inset: 0; margin: auto; width: 100%; height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--panel); border: 1px solid var(--border);
+    font-size: 11px; color: var(--fg2); font-family: ui-monospace, monospace;
+    opacity: 0; transform: translateY(6px); transition: opacity .3s ease, transform .3s ease;
+  }
+  .instr.on { opacity: 1; transform: none; }
+
+  .chip {
+    position: absolute; right: 10px; top: 40px; height: 20px; padding: 0 7px;
+    display: none; align-items: center;
+    font-family: ui-monospace, monospace; font-size: 10.5px; white-space: nowrap;
+  }
+  .chip.show { display: inline-flex; animation: pop .3s ease; }
+  .chip.write { color: var(--amber); border: 1px solid #d7a13e66; background: #d7a13e1a; }
+  .chip.read { color: var(--green); border: 1px solid #4db16866; background: #4db1681a; }
+  @keyframes pop { from { transform: scale(.85); opacity: 0; } to { transform: none; opacity: 1; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="chart" id="chart">
+    <div class="grp-head">
+      <span class="grp-title"><span class="mark good">✓</span></span>
+      <span class="grp-count">billed<b class="good" id="count">0</b> tok</span>
+    </div>
+    <div class="request">
+      <div class="blk briefing" id="briefing">briefing</div>
+      <div class="blk deliverable" id="deliverable">deliverable · 23,293 tok<i class="bp"></i></div>
+      <div class="cut"></div>
+      <div class="instr-slot">
+        <div class="instr" id="instr-0">check A</div>
+        <div class="instr" id="instr-1">check B</div>
+        <div class="instr" id="instr-2">check C</div>
+      </div>
+    </div>
+    <div class="chip write" id="chip">0/23,293 cached</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const el = (id) => document.getElementById(id);
+  const briefing = el("briefing");
+  const deliverable = el("deliverable");
+  const chip = el("chip");
+  const chips = [0, 1, 2].map((i) => el("instr-" + i));
+  const HOLD = 1500; // ms each request is on screen
+  const FULL = 23293, READ_COST = 135;
+  let total = 0;
+  const fmt = (n) => n.toLocaleString("en-US");
+
+  // story loop: check A sends the prefix cold and pays in full; checks B and C
+  // swap only the instruction after the cache point — the shared briefing +
+  // deliverable in front of it is served from cache. Click restarts.
+  function run() {
+    chips.forEach((c) => c.classList.remove("on"));
+    [briefing, deliverable].forEach((b) => b.classList.remove("cached"));
+    total = 0;
+    el("count").textContent = "0";
+    chip.classList.remove("show", "read");
+    chip.classList.add("write");
+    chip.textContent = "0/23,293 cached";
+
+    chips.forEach((c, i) => {
+      setTimeout(() => {
+        chips.forEach((k, j) => k.classList.toggle("on", j === i));
+        if (i > 0) [briefing, deliverable].forEach((b) => b.classList.add("cached"));
+        total += i === 0 ? FULL : READ_COST;
+        el("count").textContent = fmt(total);
+        chip.classList.remove("show");
+        chip.textContent = i === 0 ? "0/23,293 cached" : "23,158/23,293 cached";
+        chip.classList.toggle("write", i === 0);
+        chip.classList.toggle("read", i > 0);
+        void chip.offsetWidth;
+        chip.classList.add("show");
+      }, i * HOLD);
+    });
+  }
+
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    chips[2].classList.add("on");
+    [briefing, deliverable].forEach((b) => b.classList.add("cached"));
+    el("count").textContent = fmt(FULL + 2 * READ_COST);
+    chip.textContent = "23,158/23,293 cached";
+    chip.classList.remove("write");
+    chip.classList.add("read", "show");
+  } else {
+    const startLoop = () => {
+      if (el("chart").getBoundingClientRect().width < 120) return requestAnimationFrame(startLoop);
+      run();
+      let loop = setInterval(run, 3 * HOLD + 1000);
+      document.body.addEventListener("click", () => {
+        clearInterval(loop);
+        run();
+        loop = setInterval(run, 3 * HOLD + 1000);
+      });
+    };
+    startLoop();
+  }
+})();
+</script>
+</body>
+</html>

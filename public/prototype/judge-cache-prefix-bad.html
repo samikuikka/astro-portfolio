@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Uncacheable judge prompt — instruction first</title>
+<style>
+  /* apo design language: pure black, gray hierarchy, square corners,
+     color only as state (red = re-billed in full). */
+  :root {
+    --bg: #000;
+    --panel: #161616;
+    --muted: #1c1c1c;
+    --border: #292929;
+    --border-soft: #212121;
+    --fg: #ededed;
+    --fg2: #8a8a8a;
+    --faint: #5c5c5c;
+    --red: #cf4c4c;
+    --green: #4db168;
+    --amber: #d7a13e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0 !important; }
+  html, body { background: var(--bg); }
+  body { font-family: "Noto Sans", ui-sans-serif, system-ui, sans-serif; padding: 16px 18px 20px; cursor: pointer; }
+
+  .wrap { max-width: 860px; margin: 0 auto; }
+  .chart { position: relative; border: 1px solid var(--border); background: var(--panel); padding: 8px 12px 12px; overflow: hidden; }
+
+  .grp-head { display: flex; align-items: baseline; gap: 8px; margin: 2px 0 8px; }
+  .grp-title { font-size: 12px; font-weight: 600; color: var(--fg); }
+  .grp-title .mark { font-weight: 600; margin-right: 5px; }
+  .grp-title .mark.bad { color: var(--red); }
+  .grp-count { margin-left: auto; font-size: 11px; color: var(--fg2); font-family: ui-monospace, monospace; }
+  .grp-count b { font-weight: 600; font-size: 12.5px; margin-left: 5px; }
+  .grp-count b.bad { color: var(--red); }
+
+  .request { display: flex; align-items: stretch; height: 64px; }
+  .blk { position: relative; display: flex; align-items: center; justify-content: center; font-size: 11px; font-family: ui-monospace, monospace; transition: box-shadow .4s ease, background .4s ease, border-color .4s ease; }
+
+  /* the varying instruction leads the prompt: everything behind it starts
+     at a different offset per check, so no prefix ever matches and the
+     briefing + deliverable are re-billed in full every time */
+  .instr-slot { flex: 0 0 118px; position: relative; }
+  .instr {
+    position: absolute; inset: 0; margin: auto; width: 100%; height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--panel); border: 1px solid var(--border);
+    font-size: 11px; color: var(--fg2); font-family: ui-monospace, monospace;
+    opacity: 0; transform: translateY(6px); transition: opacity .3s ease, transform .3s ease;
+  }
+  .instr.on { opacity: 1; transform: none; }
+
+  .cut { flex: 0 0 26px; position: relative; }
+  .cut::before { content: ""; position: absolute; left: 50%; top: -8px; bottom: -8px; border-left: 1px dashed #3a3a3a; }
+
+  .briefing { background: #262626; flex: 0 0 96px; color: var(--fg2); }
+  .deliverable { background: var(--muted); border: 1px solid var(--border); flex: 1 1 auto; color: var(--fg); justify-content: flex-start; padding-left: 12px; }
+
+  .rebilled.briefing { background: #231818; box-shadow: inset 0 0 0 1px #cf4c4c55; }
+  .rebilled.deliverable { background: #231616; border-color: #5a3030; box-shadow: inset 0 0 0 1px #cf4c4c55; }
+
+  .chip {
+    position: absolute; right: 10px; top: 40px; height: 20px; padding: 0 7px;
+    display: none; align-items: center;
+    font-family: ui-monospace, monospace; font-size: 10.5px; white-space: nowrap;
+  }
+  .chip.show { display: inline-flex; animation: pop .3s ease; }
+  .chip.miss { color: var(--red); border: 1px solid #cf4c4c66; background: #cf4c4c1a; }
+  @keyframes pop { from { transform: scale(.85); opacity: 0; } to { transform: none; opacity: 1; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="chart" id="chart">
+    <div class="grp-head">
+      <span class="grp-title"><span class="mark bad">✗</span></span>
+      <span class="grp-count">billed<b class="bad" id="count">0</b> tok</span>
+    </div>
+    <div class="request">
+      <div class="instr-slot">
+        <div class="instr" id="instr-0">check A</div>
+        <div class="instr" id="instr-1">check B</div>
+        <div class="instr" id="instr-2">check C</div>
+      </div>
+      <div class="cut"></div>
+      <div class="blk briefing" id="briefing">briefing</div>
+      <div class="blk deliverable" id="deliverable">deliverable · 23,293 tok</div>
+    </div>
+    <div class="chip miss" id="chip">0/23,293 cached</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const el = (id) => document.getElementById(id);
+  const briefing = el("briefing");
+  const deliverable = el("deliverable");
+  const chip = el("chip");
+  const chips = [0, 1, 2].map((i) => el("instr-" + i));
+  const HOLD = 1500; // ms each request is on screen
+  const FULL = 23293;
+  let total = 0;
+  const fmt = (n) => n.toLocaleString("en-US");
+
+  // story loop: each check swaps the instruction at the FRONT of the prompt,
+  // so the shared briefing + deliverable behind it is never a common prefix —
+  // every request re-bills it in full. Click restarts.
+  function run() {
+    chips.forEach((c) => c.classList.remove("on"));
+    [briefing, deliverable].forEach((b) => b.classList.remove("rebilled"));
+    total = 0;
+    el("count").textContent = "0";
+    chip.classList.remove("show");
+
+    chips.forEach((c, i) => {
+      setTimeout(() => {
+        chips.forEach((k, j) => k.classList.toggle("on", j === i));
+        [briefing, deliverable].forEach((b) => b.classList.add("rebilled"));
+        total += FULL;
+        el("count").textContent = fmt(total);
+        chip.classList.remove("show");
+        void chip.offsetWidth;
+        chip.classList.add("show");
+      }, i * HOLD);
+    });
+  }
+
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    chips[2].classList.add("on");
+    [briefing, deliverable].forEach((b) => b.classList.add("rebilled"));
+    el("count").textContent = fmt(3 * FULL);
+    chip.classList.add("show");
+  } else {
+    const startLoop = () => {
+      if (el("chart").getBoundingClientRect().width < 120) return requestAnimationFrame(startLoop);
+      run();
+      let loop = setInterval(run, 3 * HOLD + 1000);
+      document.body.addEventListener("click", () => {
+        clearInterval(loop);
+        run();
+        loop = setInterval(run, 3 * HOLD + 1000);
+      });
+    };
+    startLoop();
+  }
+})();
+</script>
+</body>
+</html>

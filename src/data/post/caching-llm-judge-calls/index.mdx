@@ -1,0 +1,210 @@
+---
+draft: false
+publishDate: 2026-10-08T00:00:00Z
+title: "Engineering Cheaper LLM Evals"
+excerpt: "Engineering solutions I have found when trying to implement a cheap way to do thousands of eval checks. From prompt structures and its cache points to the Jev and escalation modes for evals."
+image: ""
+tags:
+  - Evals
+  - Apo
+  - LLM-as-judge
+---
+
+# Engineering Cheaper LLM Evals
+
+I have put quite a lot of thought on running evals, both in terms of their correctness, but also on how to make them cheaper. And this "guide" is on the latter, what are my learnings for creating test suite that is actively run, and what tips can we do to make them cheaper.
+
+And the answer is quite a lot! If running only one test, the options are limited, but when running a lot of similar tests, we get a lot of good engineering practices to prompt structures, cache point selections, and even the System One models to get the price for individual checks as low as possible.
+
+Let's start!
+
+## The Prompt
+
+First I talk about the LLM-as-judges itself. While the prompt itself might seem very easy to grasp: just put the information to the LLM and get the verdict, it really matters how the prompts are structured when we run a lot of them, and want to make the price as low as possible.
+
+All we want to optimize here for is how much it costs to run an individual prompt. And this has to do with the current pricing models of the LLM providers, where the reading from cache is in most cases 10x cheaper than reading without it.
+
+I'll use the different parts of the prompts as:
+- Briefing: The part that is always the same on all the judge calls, e.g. "You are an evaluation judge, evaluate the given value(s)..."
+- Deliverable: The artifact (the attached information) agent is given to answer the question, could be both the agent's transcript or word file the agent created, basically, what the agent created that we try to evaluate.
+- Instruction: The actual question we want to answer with the LLM-as-judge, e.g. "PASS if the name is Jane Doe, FAIL otherwise"
+
+In Apo, a judged check is one call, where the deliverable and the instruction are the two things you write:
+
+```typescript title="my-task.eval.ts"
+test("answer-is-correct", async (t, { deliverables }) => {
+  await t.judge(
+    deliverables.answer,
+    "PASS when the answer is accurate, cites the source, and adds nothing false.",
+  );
+});
+```
+
+At least for me, when I'm asked a single question, it is easier for me to read first the instruction, then read all the related material (deliverables) to answer the question, something like this:
+
+
+<iframe
+  src="/prototype/judge-cache-prefix-bad.html"
+  style="width: 100%; height: 150px; border: 0; background: #000"
+  title="Instruction-first judge prompt — the bad structure"
+  loading="lazy"
+></iframe>
+
+However, we want to maximize the cached content on all of the questions, so we should have all the information that does not change in the prompt at the start.
+
+In the Apo for example, when the deliverables are same on the same question, but just the question different, we want that everything before the question is priced with the cache read, something like this:
+
+<iframe
+  src="/prototype/judge-cache-prefix.html"
+  style="width: 100%; height: 150px; border: 0; background: #000"
+  title="Shared-prefix-first judge prompt with cache point — the good structure"
+  loading="lazy"
+></iframe>
+
+Prompt caching is a byte-prefix match, thus we want to have as long a byte-prefix as possible in each test.
+
+In order to do that, I use `cache_control: { type: "ephemeral" }` at the end of the deliverables list, which creates the cache point, where everything before the deliverables is cached.
+
+### Order of the runs
+
+In order to utilize the cache_control points we have created, we can't just randomly run the tests. As if we just run all the tests at the same time, the cache is not yet active, and we pay the full price for each of the queries:
+
+<iframe
+  src="/prototype/judge-cache-race.html"
+  style="width: 100%; height: 195px; border: 0; background: #000"
+  title="Concurrent checks race a cold cache — the bad way"
+  loading="lazy"
+></iframe>
+
+So the runs need to be run in a way that only one request pays the full price, and the rest of the runs are run after the cache is active. In Apo I have two models for this, sequential runs and the parallel runs like this:
+
+<iframe
+  src="/prototype/judge-cache-queue.html"
+  style="width: 100%; height: 195px; border: 0; background: #000"
+  title="Per-prefix judge queue, warm gate — the good way"
+  loading="lazy"
+></iframe>
+
+It adds some time compared to running all of the runs at the same time, but makes it MUCH cheaper overall. With three checks on the same deliverable, that is 69,879 billed tokens when they all race the cold cache, and 23,563 with the warm gate, roughly two thirds off the input bill, before any other trick.
+
+This type of "cache warming" run needs to happen for all the cache-prefixes, e.g. if two different tests have different deliverables list, they get their own run key. For each run key, we run their first check to warm the cache, and the rest later, e.g. if we have Apo test like this:
+
+```typescript title="report-task.eval.ts"
+// these two judge the same list ([report]) → one cache key (apo-3f9c…)
+test("report-tone", async (t, { deliverables }) => {
+  await t.judge(deliverables.report, "PASS when the tone is neutral and professional.");
+});
+
+test("report-structure", async (t, { deliverables }) => {
+  await t.judge(deliverables.report, "PASS when it has an intro, a body, and a conclusion.");
+});
+
+// these two judge a different list ([report, sources]) → another key (apo-8a21…)
+test("claims-supported", async (t, { deliverables }) => {
+  await t.judge(
+    [deliverables.report, deliverables.sources],
+    "PASS when every claim in the report is supported by a source.",
+  );
+});
+
+test("sources-cited", async (t, { deliverables }) => {
+  await t.judge(
+    [deliverables.report, deliverables.sources],
+    "PASS when every source is cited somewhere in the report.",
+  );
+});
+```
+
+The key is `"apo-" + sha256(model + briefing + deliverable)`, so the first two tests hash to the same key: one of them warms the prefix, the other reads it. The last two judge a different list, so they hash to a different key and get their own warmer. The two lanes never wait on each other, only calls sharing a key queue behind their warmer.
+
+We also use that key in the `prompt_cache_key` property that is sent with the requests. As LLMs are not just a single service, if the routing goes to the service that does not contain our cache, we pay the full read price. Thus, we give in the requests the cache key, so the servers know to route the requests to the same warm cache service. 
+
+<iframe
+  src="/prototype/judge-cache-routing-bad.html"
+  style="width: 100%; height: 325px; border: 0; background: #000"
+  title="Same-prefix calls scattered across replicas — no routing key"
+  loading="lazy"
+></iframe>
+
+In my testing on my own proxy, forgetting to put that key really made the requests get 0 cached tokens, so this is a must for correct routing to utilize caching in the setup.
+
+<iframe
+  src="/prototype/judge-cache-routing.html"
+  style="width: 100%; height: 325px; border: 0; background: #000"
+  title="Same-prefix calls pinned to one replica by prompt_cache_key"
+  loading="lazy"
+></iframe>
+
+## Cascading checks
+
+My previous [blog](https://www.samikuikka.com/en/blog/jev-vs-openai-decisions-api/) contains more data on the cascading checks, but the basic idea is that we don't even always need the LLM-as-judge.
+
+Instead we can use System One models like Jev or OpenAI's decision models to do the initial evaluation, and if the confidence is high, we don't need to run LLM-as-judge. When confidence is low then run the judge.
+
+And this is not a guess: on Apo's production checks, 72% of the tests land at or above 0.95 confidence, the band where the decision model and the LLM judge agree 99.5% of the time.
+
+In Apo the cascade is opt-in, per call, per task, or for the whole run:
+
+```typescript
+t.judge(value, instruction, { judge: { mode: "cascade" } }) // one test
+task("id", { judge: { mode: "cascade" }, /* … */ })          // one task
+```
+
+```bash
+export APO_JUDGE_MODE=cascade # every t.judge test in the run
+```
+
+<iframe
+  src="/prototype/jev-cascade.html"
+  style="width: 100%; height: 325px; border: 0; background: #000"
+  title="JEV cascade — confident checks short-circuit, unsure ones escalate to the LLM judge"
+  loading="lazy"
+></iframe>
+
+With this alone, I managed to make the LLM-as-judges 70% cheaper on my test set, while only 0.4% of the checks changed verdicts.
+So, the cheaper way to run LLM-as-judges is not to run them, instead use cheaper models.
+
+
+
+## Tiered system
+
+Another point that saves is running tests that do not even need LLMs. It is much cheaper to do deterministic code checks than LLM-as-judges. And many times this is possible.
+
+So instead of trying to get everything done with LLMs, use a good testing framework where you can test the outputs of your agent with the code. In Apo this is done by a tiered system, we have both the deterministic code checks like:
+
+```typescript title="my-task.eval.ts"
+test("parties-schema", (t, { deliverables }) => {
+  t.check(deliverables.parties, matches(partiesSchema));
+});
+```
+
+and the non-deterministic LLM-as-judge checks like:
+
+```typescript title="my-task.eval.ts"
+test("summary-quality", async (t, { deliverables }) => {
+  await t.judge(deliverables.summary, "PASS when it's a single paragraph.");
+});
+```
+
+We even have Agent-as-judges, which tend to use more tokens, but can give even better results, when your checks are hard
+
+```typescript title="my-task.eval.ts"
+test("claims-are-grounded", async (t) => {
+  await t.agent(
+    "PASS when every claim in the memorandum is supported by the source documents. Read the deliverables, search them for the cited figures, and check the trace for what the agent actually read.",
+  );
+});
+```
+
+
+So you can use the wanted compute for each check, deterministic for cheap ones, agents for hard. Measured on Apo's own runs, the ladder per check looks like this:
+
+| Decider | Cost per check | Latency |
+|---|---|---|
+| `t.check` (deterministic) | $0 | milliseconds |
+| decision model (Jev) | ~$0.0001 | ~0.3 s |
+| `t.judge` (LLM) | ~$0.003 | ~25 s |
+| `t.agent` (agentic) | >$0.003 | ~25 s, multi-step |
+
+
+All of these together aim to make Apo a cheap and accurate way to run your evals, no matter how hard your checks are.

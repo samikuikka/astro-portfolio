@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JEV cascade — confident short-circuit, unsure escalates</title>
+<style>
+  /* apo design language: pure black, gray hierarchy, square corners,
+     color only as state (green = direct verdict, amber = escalated). */
+  :root {
+    --bg: #000; --panel: #161616; --muted: #1c1c1c; --border: #292929;
+    --fg: #ededed; --fg2: #8a8a8a; --faint: #5c5c5c;
+    --red: #cf4c4c; --green: #4db168; --amber: #d7a13e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0 !important; }
+  html, body { background: var(--bg); }
+  body { font-family: "Noto Sans", ui-sans-serif, system-ui, sans-serif; padding: 14px 16px 16px; cursor: pointer; }
+  .wrap { max-width: 700px; margin: 0 auto; }
+
+  .chart { border: 1px solid var(--border); background: var(--panel); padding: 6px 0 10px; overflow: hidden; }
+  .head { display: flex; align-items: baseline; gap: 8px; margin: 2px 12px 0; }
+  .mark { font-size: 11px; font-weight: 600; color: var(--green); }
+  .count { margin-left: auto; font-size: 10px; color: var(--fg2); font-family: ui-monospace, monospace; }
+  .count b { font-weight: 600; font-size: 11.5px; margin-left: 5px; color: var(--green); }
+
+  .stage { position: relative; height: 254px; }
+  svg.wires { position: absolute; inset: 0; overflow: visible; }
+  .ln { stroke: #3a3a3a; stroke-width: 1.5; fill: none; visibility: hidden; }
+  .ln.bridge { stroke: none; }
+  .ln.flow, .ln.used, .ln.t-hit, .ln.t-write { visibility: visible; }
+  .ln.used { stroke: #3a3a3a; }
+  .ln.flow { stroke: #8a8a8a; stroke-dasharray: 5 7; animation: dash .5s linear infinite; }
+  @keyframes dash { to { stroke-dashoffset: -12; } }
+  .ln.t-hit { stroke: #3f9e5f; }
+  .ln.t-write { stroke: #b08530; }
+
+  .src { position: absolute; top: 4px; width: 24px; height: 24px; transform: translateX(-50%);
+         border-radius: 50% !important; display: flex; align-items: center; justify-content: center;
+         background: #101010; border: 1px solid #3a3a3a;
+         font-size: 9px; color: var(--fg2); font-family: ui-monospace, monospace; }
+
+  /* the JEV: a confidence gauge — arc, needle, hub; the needle swings to
+     the measured confidence while a check crosses through */
+  .jev { position: absolute; top: 88px; left: 50%; transform: translateX(-50%);
+         display: flex; flex-direction: column; align-items: center; }
+  .jnode { display: block; }
+  .jnode .arc, .jnode .needle, .jnode .hub { stroke: #5a5a5a; fill: none; stroke-width: 1.5; transition: stroke .25s ease; }
+  .jnode .hub { fill: #5a5a5a; stroke: none; }
+  .jnode .needle { transform-origin: 38px 42px; transform: rotate(-70deg);
+                   transition: transform .55s cubic-bezier(.3, 1.6, .4, 1); }
+  .jev.decide .jnode .arc, .jev.decide .jnode .needle { stroke: #ededed; }
+  .jev.decide .jnode .hub { fill: #ededed; }
+  .conf { margin-top: 2px; font-size: 9.5px; font-family: ui-monospace, monospace; color: var(--faint); min-height: 12px; }
+  .conf.hi { color: var(--green); }
+  .conf.lo { color: var(--amber); }
+
+  .term { position: absolute; top: 202px; width: 30%; height: 46px; transform: translateX(-50%);
+          display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+          background: var(--muted); border: 1px solid #2f2f2f;
+          transition: border-color .4s ease, box-shadow .4s ease; }
+  .term .tlbl { font-size: 9px; color: var(--faint); font-family: ui-monospace, monospace; }
+  .term.st-hit { border-color: var(--green); box-shadow: inset 0 0 0 1px #4db16844; }
+  .term.st-write { border-color: var(--amber); box-shadow: inset 0 0 0 1px #d7a13e44; }
+  .tres { display: none; font-size: 9px; font-family: ui-monospace, monospace; white-space: nowrap; }
+  .tres.show { display: inline-flex; animation: pop .3s ease; }
+  .tres.hit { color: var(--green); }
+  .tres.write { color: var(--amber); }
+  @keyframes pop { from { transform: scale(.85); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  .pkt { position: absolute; left: 0; top: 0; height: 18px; padding: 0 5px; display: none; align-items: center;
+         background: #161616; border: 1px solid #4a4a4a; z-index: 2;
+         font-size: 9px; color: var(--fg); font-family: ui-monospace, monospace; white-space: nowrap; }
+  .pkt.spawn { display: inline-flex; animation: pop .25s ease; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="chart" id="chart">
+    <div class="head">
+      <span class="mark">✓</span>
+      <span class="count">billed<b id="count">0</b> tok</span>
+    </div>
+    <div class="stage" id="stage">
+      <svg class="wires" id="wires"></svg>
+      <div class="src" id="src-a" style="left: 18%">A</div>
+      <div class="src" id="src-b" style="left: 50%">B</div>
+      <div class="src" id="src-c" style="left: 82%">C</div>
+      <div class="jev" id="jev">
+        <svg class="jnode" width="76" height="52" viewBox="0 0 76 52">
+          <path class="arc" d="M 14 42 A 24 24 0 0 1 62 42"></path>
+          <line class="needle" id="needle" x1="38" y1="42" x2="38" y2="21"></line>
+          <circle class="hub" cx="38" cy="42" r="3.2"></circle>
+        </svg>
+        <span class="conf" id="conf"></span>
+      </div>
+      <div class="term" id="term-verdict" style="left: 26%"><span class="tlbl">verdict</span><span class="tres" id="res-verdict"></span></div>
+      <div class="term" id="term-judge" style="left: 74%"><span class="tlbl">llm judge</span><span class="tres" id="res-judge"></span></div>
+      <div class="pkt" id="pkt-a">check A</div>
+      <div class="pkt" id="pkt-b">check B</div>
+      <div class="pkt" id="pkt-c">check C</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const JUDGE_TOK = 23293;
+  const THRESHOLD = 0.95;
+
+  // two of three checks are confident enough to never reach the LLM judge —
+  // the measured cascade cut is ~72% fewer primary calls. Confidence belongs
+  // to the decision model only; the primary judge just returns a verdict.
+  const REQS = [
+    { id: "a", conf: 0.98, verdict: "pass", to: "verdict" },
+    { id: "b", conf: 0.41, verdict: "fail", to: "judge" },
+    { id: "c", conf: 0.96, verdict: "pass", to: "verdict" },
+  ];
+
+  const el = (id) => document.getElementById(id);
+  const stage = el("stage");
+  const svg = el("wires");
+  const jev = el("jev");
+  const needle = el("needle");
+  const confEl = el("conf");
+  const countEl = el("count");
+  const terms = { verdict: el("term-verdict"), judge: el("term-judge") };
+  const resEl = { verdict: el("res-verdict"), judge: el("res-judge") };
+  const pkts = { a: el("pkt-a"), b: el("pkt-b"), c: el("pkt-c") };
+  let total = 0;
+  const fmt = (n) => n.toLocaleString("en-US");
+
+  const mkPath = () => {
+    const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    p.setAttribute("class", "ln");
+    svg.appendChild(p);
+    return p;
+  };
+  const inPaths = { a: mkPath(), b: mkPath(), c: mkPath() };
+  const outPaths = { verdict: mkPath(), judge: mkPath() };
+  const bridges = { a: mkPath(), b: mkPath(), c: mkPath() };
+
+  const rectIn = (node) => {
+    const s = stage.getBoundingClientRect(), r = node.getBoundingClientRect();
+    return { left: r.left - s.left, top: r.top - s.top, w: r.width, h: r.height };
+  };
+
+  function layout() {
+    const s = stage.getBoundingClientRect();
+    svg.setAttribute("width", s.width);
+    svg.setAttribute("height", s.height);
+    svg.setAttribute("viewBox", "0 0 " + s.width + " " + s.height);
+    const G = rectIn(el("needle").ownerSVGElement);
+    const cx = G.left + G.w / 2;
+    const topY = G.top + (20 / 52) * G.h;   // needle tip zone — wires arrive here
+    const botY = G.top + (44 / 52) * G.h;   // just under the hub — wires leave here
+    const curve = (x1, y1, x2, y2) => {
+      const my = (y1 + y2) / 2;
+      return "M " + x1 + " " + y1 + " C " + x1 + " " + my + ", " + x2 + " " + my + ", " + x2 + " " + y2;
+    };
+    const inX = { a: -10, b: 0, c: 10 };
+    const outX = { verdict: -12, judge: 12 };
+    REQS.forEach((r) => {
+      const S = rectIn(el("src-" + r.id));
+      inPaths[r.id].setAttribute("d", curve(S.left + S.w / 2, S.top + S.h + 4, cx + inX[r.id], topY));
+      bridges[r.id].setAttribute("d", curve(cx + inX[r.id], topY, cx + outX[r.to], botY));
+    });
+    for (const t of ["verdict", "judge"]) {
+      const T = rectIn(terms[t]);
+      outPaths[t].setAttribute("d", curve(cx + outX[t], botY, T.left + T.w / 2, T.top));
+    }
+  }
+
+  const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+  let runId = 0;
+  const guard = (fn) => {
+    const id = runId;
+    return (...a) => { if (id === runId) fn(...a); };
+  };
+
+  function travel(pathEl, pkt, dur, done) {
+    const id = runId;
+    const len = pathEl.getTotalLength();
+    const t0 = performance.now();
+    const frame = (now) => {
+      if (id !== runId) return;
+      const t = Math.min(1, (now - t0) / dur);
+      const p = pathEl.getPointAtLength(easeInOut(t) * len);
+      pkt.style.transform = "translate(" + (p.x - pkt.offsetWidth / 2) + "px," + (p.y - pkt.offsetHeight / 2) + "px)";
+      if (t < 1) requestAnimationFrame(frame);
+      else done();
+    };
+    requestAnimationFrame(frame);
+  }
+
+  function drawOn(p) {
+    const len = p.getTotalLength();
+    p.style.visibility = "visible";
+    p.style.transition = "none";
+    p.style.strokeDasharray = len + " " + len;
+    p.style.strokeDashoffset = len;
+    void p.getBoundingClientRect();
+    p.style.transition = "stroke-dashoffset .45s ease";
+    p.style.strokeDashoffset = "0";
+  }
+
+  function toClass(p, cls) {
+    p.style.cssText = "";
+    p.setAttribute("class", "ln" + (cls ? " " + cls : ""));
+  }
+
+  function reset() {
+    total = 0;
+    countEl.textContent = "0";
+    for (const r of REQS) pkts[r.id].className = "pkt";
+    for (const t of ["verdict", "judge"]) {
+      terms[t].className = "term";
+      resEl[t].className = "tres";
+      resEl[t].textContent = "";
+    }
+    [...Object.values(inPaths), ...Object.values(outPaths)].forEach((p) => toClass(p, ""));
+    Object.values(bridges).forEach((p) => toClass(p, "bridge"));
+    jev.classList.remove("decide");
+    confEl.textContent = "";
+    confEl.className = "conf";
+    needle.style.transform = "rotate(-70deg)";
+    layout();
+  }
+
+  function setChip(term, cls, text) {
+    resEl[term].className = "tres " + cls;
+    resEl[term].textContent = text;
+    void resEl[term].offsetWidth;
+    resEl[term].classList.add("show");
+  }
+
+  function runRequest(i, done) {
+    if (i >= REQS.length) return done();
+    const r = REQS[i];
+    const pkt = pkts[r.id];
+    const hi = r.conf >= THRESHOLD;
+
+    const g = guard(() => {
+      pkt.classList.add("spawn");
+      const p0 = inPaths[r.id].getPointAtLength(0);
+      pkt.style.transform = "translate(" + (p0.x - pkt.offsetWidth / 2) + "px," + (p0.y - pkt.offsetHeight / 2) + "px)";
+      drawOn(inPaths[r.id]);
+      setTimeout(guard(() => {
+        toClass(inPaths[r.id], "flow");
+        travel(inPaths[r.id], pkt, 700, guard(() => {
+          toClass(inPaths[r.id], "used");
+          // the gauge measures: needle swings to the confidence, readout shows it
+          jev.classList.add("decide");
+          needle.style.transform = "rotate(" + (-70 + r.conf * 140) + "deg)";
+          confEl.textContent = "conf " + r.conf.toFixed(2);
+          confEl.classList.add(hi ? "hi" : "lo");
+          drawOn(outPaths[r.to]);
+          setTimeout(() => jev.classList.remove("decide"), 750);
+          // cross through the gauge while it measures
+          travel(bridges[r.id], pkt, 320, guard(() => {
+            toClass(outPaths[r.to], "flow");
+            travel(outPaths[r.to], pkt, 700, guard(() => {
+              pkt.classList.remove("spawn");
+              terms[r.to].classList.add(hi ? "st-hit" : "st-write");
+              if (r.to === "verdict") {
+                setChip("verdict", "hit", r.verdict + " · " + r.conf.toFixed(2));
+                toClass(outPaths.verdict, "t-hit");
+                setTimeout(guard(() => runRequest(i + 1, done)), 320);
+              } else {
+                toClass(outPaths.judge, "t-write");
+                // the LLM judge call: it costs the full input, then rules
+                setTimeout(guard(() => {
+                  setChip("judge", "write", r.verdict + " · " + fmt(JUDGE_TOK) + " tok");
+                  total += JUDGE_TOK;
+                  countEl.textContent = fmt(total);
+                  setTimeout(guard(() => runRequest(i + 1, done)), 320);
+                }), 700);
+              }
+            }));
+          }));
+        }));
+      }), 260);
+    });
+    g();
+  }
+
+  function play() {
+    runId += 1;
+    reset();
+    const finish = guard(() => setTimeout(guard(play), 1600));
+    runRequest(0, finish);
+  }
+
+  function staticEnd() {
+    layout();
+    needle.style.transform = "rotate(" + (-70 + 0.96 * 140) + "deg)";
+    confEl.textContent = "conf 0.96";
+    confEl.classList.add("hi");
+    terms.verdict.classList.add("st-hit");
+    setChip("verdict", "hit", "pass · 0.96");
+    terms.judge.classList.add("st-write");
+    setChip("judge", "write", "fail · " + fmt(JUDGE_TOK) + " tok");
+    for (const r of REQS) toClass(inPaths[r.id], "used");
+    toClass(outPaths.verdict, "t-hit");
+    toClass(outPaths.judge, "t-write");
+    countEl.textContent = fmt(JUDGE_TOK);
+  }
+
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    staticEnd();
+    let rt;
+    window.addEventListener("resize", () => {
+      clearTimeout(rt);
+      rt = setTimeout(staticEnd, 150);
+    });
+  } else {
+    const startLoop = () => {
+      if (stage.clientWidth < 120) return requestAnimationFrame(startLoop);
+      play();
+    };
+    startLoop();
+    document.body.addEventListener("click", () => play());
+    // wires are drawn in px from live node rects — redraw when resized,
+    // but only once the width is sane (resize can fire at transient
+    // sizes mid-drag)
+    let rt, rt2, lastW = 0;
+    const safeRestart = () => {
+      const w = stage.clientWidth;
+      if (w < 120) return setTimeout(safeRestart, 100);
+      if (w === lastW) return;
+      lastW = w;
+      play();
+    };
+    window.addEventListener("resize", () => {
+      clearTimeout(rt);
+      rt = setTimeout(safeRestart, 150);
+      // a settle pass: resize can report transient widths mid-drag, so
+      // confirm once more at the final size
+      clearTimeout(rt2);
+      rt2 = setTimeout(safeRestart, 600);
+    });
+  }
+})();
+</script>
+</body>
+</html>

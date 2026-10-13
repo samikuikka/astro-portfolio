@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Same-prefix requests pinned to one replica</title>
+<style>
+  html, body { background: #000; margin: 0; }
+  body { font-family: "Noto Sans", ui-sans-serif, system-ui, sans-serif; padding: 14px 16px 16px; cursor: pointer; }
+  .wrap { max-width: 700px; margin: 0 auto; }
+</style>
+</head>
+<body>
+<div class="wrap"><div id="chart"></div></div>
+<script src="/prototype/router-flow.js"></script>
+<script>
+  // every request carries the same prompt_cache_key, so the router keeps
+  // sending them to the one replica that holds the cached prefix
+  RouterFlow.mount(document.getElementById("chart"), {
+    mark: "good",
+    routerKey: "route by: apo-3f9c…",
+    replicas: 3,
+    requests: [
+      { label: "A · apo-3f9c…", from: 0, to: 1, outcome: "write", billed: 23293, chip: "0/23,293 cached" },
+      { label: "B · apo-3f9c…", from: 1, to: 1, outcome: "hit",   billed: 135,   chip: "23,158/23,293 cached" },
+      { label: "C · apo-3f9c…", from: 2, to: 1, outcome: "hit",   billed: 135,   chip: "23,158/23,293 cached" },
+    ],
+  });
+</script>
+</body>
+</html>
