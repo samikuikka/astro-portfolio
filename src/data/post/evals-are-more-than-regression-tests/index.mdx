@@ -1,0 +1,131 @@
+---
+draft: false
+publishDate: 2026-10-16T00:00:00Z
+title: "Defining Future Agent Capabilities with Evals"
+excerpt: "Most often when building evals, they are regression tests on the current system. But even greater use case is building it for frontier where you want your agents to go!"
+image: "./title.png"
+tags:
+  - Evals
+  - Apo
+---
+import Tweet from "../../../components/blog/Tweet.astro";
+import TerminalDemo from "../../../components/blog/TerminalDemo.astro";
+
+# Defining Future Agent Capabilities with Evals
+
+I got some thoughts from the discussions that have happened these days in the X about evals:
+
+<Tweet id="https://x.com/Vtrivedy10/status/2110915746981200200" />
+
+It seems that organizations are waking up on the idea evals, not the usual regression testing idea, but the idea of evals should tell what your system should be capable of, not that it won't regress from this point forward.
+
+But instead of just talking like everyone else, I show you with my eval setup, with real use-case I have had in my company.
+
+## Evals as regression tests
+
+There are levels to the evals. What I mean by that, is that when we start creating evals, we usually do not start with the best tests that make the system useful, but the ones that at least shows that there is no regression.
+
+Regression tests are great! I have them, and all of the tests that become passing, eventually changes to the regression tests. For example, if I had barely passing test month ago, but now it's easy to pass with newer models and fixes to my harness, that test becomes regression test showing that our new changes won't cause any harm on that functionality.
+
+Regression tests are the ones that are usually done first, because they are the things we already know on how everything should work, they are easy to do, and they are easy to check.
+
+## Evals as defining the future
+
+Like the tweet there tells, evals can also be used to define the future.
+
+I'll change a bit wording here: instead of talking about evals, from now on, I use the word acceptance tests, which basically mean eval in this concept. But I think what these eval framework people talk when trying to discuss the concept of evals for the future, is actually acceptance testing for the agents.
+
+And the overall concept of defining the future with the tests, is that we do not need to have fully passing tests at this point. The failure is usually more interesting info than full passing test.
+
+Here failure can be used to tell that we have work to do!
+Here's my real experience using acceptance tests (evals) to change harness at our company
+
+## Example
+
+### 1) Creating the test
+
+First you need to create a test that would do the behaviour you want from the agent. In my case, I noticed that our agent was not efficient using its calculator tool. When it had many things to calculate, for example 20 different calculations, it did them one by one with the tool, something like that:
+
+`
+calculator(1+2)
+calculator(2*3)
+calculator(4+5)
+`
+
+This is bad in terms of cost, as every tool call costs the cache read, and also takes much more time than doing the all the calculations at once.
+
+So I had in my mind the behaviour I wanted: given document with a lot of different calculations needed to get to the final outcome, do the calculations in less than x amount of calculator tool calls!
+
+So something like this in the [Apo](https://docs.test-apo.online/) test:
+
+```typescript title="calculator-batching.eval.ts"
+// Wanted behaviour: twenty calculations, at most five calculator calls —
+// batched expressions, not one round trip per line.
+test("calculator-calls-batched", (t) => {
+  t.assert(
+    "at most 5 calculator calls",
+    (flow) => flow.toolCalls.filter((call) => call.name === "calculator").length <= 5,
+  );
+});
+```
+
+### 2) Running the system
+
+The test itself is what we want, not where we at.
+When we try to actually run the test, we will get error due to our harness doing way too much tool calls in the task:
+
+<TerminalDemo
+  autoRun
+  command="apo task run ./tasks/t-calculator-batching"
+  lines={[
+    { parts: [{ text: "Revision: dirty worktree 8f14b2c from github.com/samikuikka/apo", tone: "dim" }] },
+    { text: "" },
+    { parts: [{ text: "FAIL", tone: "danger" }, { text: " t-calculator-batching", tone: "bold" }] },
+    { parts: [{ text: "  Checks:", tone: "bold" }] },
+    { parts: [{ text: "    " }, { text: "✗", tone: "danger" }, { text: " calculator-calls-batched" }] },
+    { parts: [{ text: "      " }, { text: "✗", tone: "danger" }, { text: " at most 5 calculator calls" }] },
+    { text: "        tasks/t-calculator-batching/t-calculator-batching.eval.ts:75:3", tone: "dim" },
+    { text: "        − Expected: at most 5 calculator calls", tone: "success" },
+    { text: "        + Received: 20 calculator calls", tone: "danger" },
+    { text: "" },
+    { parts: [{ text: "Run:     " }, { text: "run-4a7d91c3e2f80b615a9d2c4e", tone: "bold" }] },
+    { text: "Inspect: apo runs show run-4a7d91c3e2f80b615a9d2c4e", tone: "dim" },
+  ]}
+/>
+
+Now that we have the test, and show that we don't have the wanted behaviour, we got the baseline to improve towards.
+
+### 3) Improve the system
+
+Now that we have test about how we wish our agent to work, we can run the test as many times as we want and improve the harness until the test turns into PASS.
+
+For this simple example that I had in our product, we gave calculator tool way to batch calculations, and give many calculations in a single call, so something like this
+
+`
+calculator(1+2; 2*3; 4+5)
+`
+
+and changed the prompts to teach the agent to use batching when there is many calculations.
+
+Now, after the changes, the Apo tests start to go green:
+
+<TerminalDemo
+  autoRun
+  command="apo task run ./tasks/t-calculator-batching"
+  lines={[
+    { parts: [{ text: "Revision: dirty worktree e3a1f90 from github.com/samikuikka/apo", tone: "dim" }] },
+    { text: "" },
+    { parts: [{ text: "PASS", tone: "success" }, { text: " t-calculator-batching", tone: "bold" }] },
+    { parts: [{ text: "  Checks:", tone: "bold" }] },
+    { parts: [{ text: "    " }, { text: "✓", tone: "success" }, { text: " calculator-calls-batched" }] },
+    { text: "" },
+    { parts: [{ text: "Run:     " }, { text: "run-b7e2f4a91c03d6855a0e2b4f", tone: "bold" }] },
+    { text: "Inspect: apo runs show run-b7e2f4a91c03d6855a0e2b4f", tone: "dim" },
+  ]}
+/>
+
+## Steer towards your end goal
+
+This type of behaviour: steering towards your wanted end goal with the evals is the frontier many eval platforms want to be in. With the Apo, I have put the capability testing (acceptance testing) at the forefront for the framework, it is designed for this, creating the test that tells the behaviour we want and improve the system until it holds.
+
+Evals can fail, and they even should fail when people using them are trying to push the frontier. And what's great about these failing tests is that when we finally implement the feature, it automatically becomes regression test that we can check the functionality still works later!

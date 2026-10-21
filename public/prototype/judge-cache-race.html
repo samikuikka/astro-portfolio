@@ -90,6 +90,15 @@
   const FULL = 23293;
   const GUTTER = 92;   // px, matches .axis/.grid/.playhead left
 
+  // ?timers: drive all motion from JS ticks (headless captures; virtual
+  // time fast-forwards timers but does not interpolate CSS transitions)
+  const TIMERS = new URLSearchParams(location.search).has("timers");
+  if (new URLSearchParams(location.search).has("timers")) {
+    const st = document.createElement("style");
+    st.textContent = "* { transition: none !important; animation: none !important; }";
+    document.head.appendChild(st);
+  }
+
   const el = (id) => document.getElementById(id);
   const chart = el("chart");
   let total = 0;
@@ -112,11 +121,23 @@
     const bar = el("bar-" + id);
     bar.style.transition = "none";
     bar.style.left = pos(start);
-    bar.style.width = "0px";
     bar.classList.add("running");
-    void bar.offsetWidth;
-    bar.style.transition = "width " + (len * SEC) + "s linear";
-    bar.style.width = ((len / TOTAL) * trackWidth()) + "px";
+    const setW = (t) => { bar.style.width = ((len * t / TOTAL) * trackWidth()) + "px"; };
+    if (TIMERS) {
+      setW(0);
+      const t0 = performance.now(), dur = len * SEC * 1000;
+      const tick = () => {
+        const t = Math.min(1, (performance.now() - t0) / dur);
+        setW(t);
+        if (t < 1) setTimeout(tick, 20);
+      };
+      tick();
+    } else {
+      bar.style.width = "0px";
+      void bar.offsetWidth;
+      bar.style.transition = "width " + (len * SEC) + "s linear";
+      setW(1);
+    }
   }
 
   function finishBar(id, delayMs) {
@@ -162,8 +183,18 @@
     const ph = el("playhead");
     void ph.offsetWidth;
     ph.classList.add("on");
-    ph.style.transition = "transform " + (TOTAL * SEC) + "s linear";
-    ph.style.transform = "translateX(" + trackWidth() + "px)";
+    if (TIMERS) {
+      const t0 = performance.now(), dur = TOTAL * SEC * 1000;
+      const tick = () => {
+        const t = Math.min(1, (performance.now() - t0) / dur);
+        ph.style.transform = "translateX(" + (t * trackWidth()) + "px)";
+        if (t < 1) setTimeout(tick, 20);
+      };
+      tick();
+    } else {
+      ph.style.transition = "transform " + (TOTAL * SEC) + "s linear";
+      ph.style.transform = "translateX(" + trackWidth() + "px)";
+    }
   }
 
   function staticEnd() {

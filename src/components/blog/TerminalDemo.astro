@@ -12,6 +12,9 @@
  * Each line is either a string (shorthand) or `{ parts: [{ text, tone }] }`.
  * Output is mocked — it doesn't run against anything real.
  *
+ * `autoRun` streams the output without waiting for the Run click (once the
+ * terminal scrolls into view); the button then serves as Run again.
+ *
  * Same idiom as HarnessLoop: self-themed dark panel (high-contrast in both
  * site themes), not-prose to escape the typography container, scoped styles,
  * prefers-reduced-motion (instant full output), astro:before-swap cleanup.
@@ -23,9 +26,10 @@ type Line = string | { text?: string; tone?: Tone; parts?: Part[] };
 interface Props {
 	command: string | string[];
 	lines: Line[];
+	autoRun?: boolean;
 }
 
-const { command, lines } = Astro.props;
+const { command, lines, autoRun = false } = Astro.props;
 const commands = Array.isArray(command) ? command : [command];
 
 // Shell-style highlight for the prompt line: binary bold, flags dim — purely
@@ -52,7 +56,7 @@ const normalized: Part[][] = lines.map((line) => {
 });
 ---
 
-<div class="terminal not-prose" data-terminal>
+<div class="terminal not-prose" data-terminal data-autorun={autoRun ? "" : undefined}>
 	<div class="terminal__prompt">
 		<div class="terminal__command-block">
 			{commands.map((cmd, ci) => (
@@ -403,6 +407,27 @@ const normalized: Part[][] = lines.map((line) => {
 		}
 
 		runBtn.addEventListener("click", stream);
+
+	// autoRun: stream without waiting for the click, but only once the
+	// terminal is actually on screen — below-the-fold demos must not play
+	// to an audience that already scrolled past them. The button stays
+	// live and reads Run again afterwards.
+	if (root.dataset.autorun !== undefined) {
+		if (typeof IntersectionObserver === "function") {
+			const io = new IntersectionObserver(
+				(entries) => {
+					if (entries.some((entry) => entry.isIntersecting)) {
+						io.disconnect();
+						stream();
+					}
+				},
+				{ threshold: 0.35 },
+			);
+			io.observe(root);
+		} else {
+			stream();
+		}
+	}
 
 		document.addEventListener(
 			"astro:before-swap",

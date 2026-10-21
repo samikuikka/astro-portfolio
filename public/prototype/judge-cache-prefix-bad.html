@@ -94,6 +94,12 @@
 <script>
 (function () {
   "use strict";
+  // ?timers: snap state changes instead of CSS fades (headless captures)
+  if (new URLSearchParams(location.search).has("timers")) {
+    const st = document.createElement("style");
+    st.textContent = "* { transition: none !important; animation: none !important; }";
+    document.head.appendChild(st);
+  }
   const el = (id) => document.getElementById(id);
   const briefing = el("briefing");
   const deliverable = el("deliverable");

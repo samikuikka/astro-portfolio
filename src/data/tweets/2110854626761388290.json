@@ -1,0 +1,49 @@
+{
+  "__typename": "Tweet",
+  "favorite_count": 42,
+  "lang": "en",
+  "created_at": "2026-10-15T22:05:35.000Z",
+  "display_text_range": [
+    0,
+    804
+  ],
+  "entities": {},
+  "id_str": "2110854626761388290",
+  "text": "I've been seeing an increase in companies talk about how they have &lt;coding agent&gt; write all their evals automatically based on production traces\n\nwhile i think this is a good start, it's very important to note that if you only ever create evals based on traces generated from your users, you'll only ever have &quot;regression test evals&quot;.\n\nsure, you should have some of these. but if you're doing eval dev, imo &gt;50% of your time should be in identifying what your agent can in theory handle, and writing evals for that.\n\nthis will have overlap with what your users are asking of your agent in prod, but it'll also catch issues before your users can\n\nyou cant just turn prod traces into evals. you need a system which can also identify net-new or potentially lacking areas of your agent, and build evals there",
+  "user": {
+    "id_str": "797465269",
+    "name": "Brace",
+    "screen_name": "BraceSproul",
+    "is_blue_verified": true,
+    "profile_image_shape": "Circle",
+    "verified": false,
+    "profile_image_url_https": "https://pbs.twimg.com/profile_images/1694931592505085952/i14SGO0t_normal.jpg",
+    "highlighted_label": {
+      "badge": {
+        "url": "https://pbs.twimg.com/profile_images/2028336270431453184/jRRpLAdG_bigger.jpg"
+      },
+      "description": "LangChain",
+      "url": {
+        "url": "https://twitter.com/LangChain",
+        "url_type": "DeepLink"
+      },
+      "user_label_display_type": "Badge",
+      "user_label_type": "BusinessLabel"
+    }
+  },
+  "edit_control": {
+    "edit_tweet_ids": [
+      "2110854626761388290"
+    ],
+    "editable_until_msecs": "1792105535000",
+    "edits_remaining": "5",
+    "is_edit_eligible": false
+  },
+  "conversation_count": 15,
+  "news_action_type": "conversation",
+  "isEdited": false,
+  "isStaleEdit": false,
+  "note_tweet": {
+    "id": "Tm90ZVR3ZWV0UmVzdWx0czoyMTEwODU0NjI2NjMxNDYyOTEy"
+  }
+}

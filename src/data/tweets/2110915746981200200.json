@@ -1,0 +1,102 @@
+{
+  "__typename": "Tweet",
+  "favorite_count": 14,
+  "lang": "en",
+  "created_at": "2026-10-16T02:08:27.000Z",
+  "display_text_range": [
+    0,
+    934
+  ],
+  "entities": {},
+  "id_str": "2110915746981200200",
+  "text": "we talked about this today 👀\n\nevals should push the frontier of what agents are capable of doing -  things ppl aren’t doing today bc maybe the surface doesn’t yet exist\n\nthis is uniquely different from evals that map the “now” of the agent like regression test style evals\n\nyou often don’t have traces that represents the future looking behavior\n\nthe greatest product minds build on behalf of their user with radical clarity -> you’re also in a way building/eval’ing on behalf of your future users\n\nfor RL Tasks this is more clear - you shoot for a 0.2-0.6 pass rate so you have signal to climb on. but the same holds for evals that you never use for hill climbing\n\nif you have a great internal world model for how ppl will use your agent - you can do a bunch without traces\n\nbut traces make that concrete bc no one has a perfect world model of real world usage\n\ntldr: build evals for the frontier of where you want your agents to go",
+  "user": {
+    "id_str": "1222786244",
+    "name": "Viv",
+    "screen_name": "Vtrivedy10",
+    "is_blue_verified": true,
+    "profile_image_shape": "Circle",
+    "verified": false,
+    "profile_image_url_https": "https://pbs.twimg.com/profile_images/1805079750873923584/7sTh63Eo_normal.jpg",
+    "highlighted_label": {
+      "badge": {
+        "url": "https://pbs.twimg.com/profile_images/2028336270431453184/jRRpLAdG_bigger.jpg"
+      },
+      "description": "LangChain",
+      "url": {
+        "url": "https://twitter.com/LangChain",
+        "url_type": "DeepLink"
+      },
+      "user_label_display_type": "Badge",
+      "user_label_type": "BusinessLabel"
+    }
+  },
+  "edit_control": {
+    "initial_tweet_id": "2110907931751219696",
+    "edit_tweet_ids": [
+      "2110907931751219696",
+      "2110915746981200200"
+    ],
+    "editable_until_msecs": "1792118244000",
+    "edits_remaining": "4",
+    "is_edit_eligible": true
+  },
+  "conversation_count": 4,
+  "news_action_type": "conversation",
+  "quoted_tweet": {
+    "favorite_count": 42,
+    "lang": "en",
+    "reply_count": 15,
+    "retweet_count": 4,
+    "created_at": "2026-10-15T22:05:35.000Z",
+    "display_text_range": [
+      0,
+      286
+    ],
+    "entities": {},
+    "id_str": "2110854626761388290",
+    "text": "I've been seeing an increase in companies talk about how they have &lt;coding agent&gt; write all their evals automatically based on production traces\n\nwhile i think this is a good start, it's very important to note that if you only ever create evals based on traces generated from your",
+    "user": {
+      "id_str": "797465269",
+      "name": "Brace",
+      "screen_name": "BraceSproul",
+      "is_blue_verified": true,
+      "profile_image_shape": "Circle",
+      "verified": false,
+      "profile_image_url_https": "https://pbs.twimg.com/profile_images/1694931592505085952/i14SGO0t_normal.jpg",
+      "highlighted_label": {
+        "badge": {
+          "url": "https://pbs.twimg.com/profile_images/2028336270431453184/jRRpLAdG_bigger.jpg"
+        },
+        "description": "LangChain",
+        "url": {
+          "url": "https://twitter.com/LangChain",
+          "url_type": "DeepLink"
+        },
+        "user_label_display_type": "Badge",
+        "user_label_type": "BusinessLabel"
+      }
+    },
+    "edit_control": {
+      "edit_tweet_ids": [
+        "2110854626761388290"
+      ],
+      "editable_until_msecs": "1792105535000",
+      "edits_remaining": "5",
+      "is_edit_eligible": false
+    },
+    "isEdited": false,
+    "isStaleEdit": false
+  },
+  "isEdited": true,
+  "isStaleEdit": false,
+  "previous_counts": {
+    "favorite_count": 1,
+    "quote_count": 0,
+    "reply_count": 0,
+    "retweet_count": 0
+  },
+  "note_tweet": {
+    "id": "Tm90ZVR3ZWV0UmVzdWx0czoyMTEwOTE1NzQ2ODcyMDQ5NjY0"
+  }
+}

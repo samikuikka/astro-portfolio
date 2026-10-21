@@ -120,6 +120,20 @@
     document.head.appendChild(s);
   }
 
+  // ?timers: drive animation frames on setTimeout instead of rAF. Same
+  // visuals at ~30fps; used by headless captures (virtual time fast-forwards
+  // timers but stalls rAF). Harmless without the parameter.
+  const RF_TIMERS = new URLSearchParams(location.search).has("timers");
+  if (new URLSearchParams(location.search).has("timers")) {
+    const st = document.createElement("style");
+    st.textContent = "* { transition: none !important; animation: none !important; }";
+    document.head.appendChild(st);
+  }
+
+  if (RF_TIMERS) {
+    window.requestAnimationFrame = (cb) => setTimeout(() => cb(performance.now()), 33);
+  }
+
   const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
   function mount(root, cfg) {
@@ -228,9 +242,20 @@
       p.style.transition = "none";
       p.style.strokeDasharray = len + " " + len;
       p.style.strokeDashoffset = len;
+      const toZero = (t) => { p.style.strokeDashoffset = (len * (1 - t)) + "px"; };
+      if (RF_TIMERS) {
+        const t0 = performance.now();
+        const tick = () => {
+          const t = Math.min(1, (performance.now() - t0) / 450);
+          toZero(t);
+          if (t < 1) setTimeout(tick, 20);
+        };
+        tick();
+        return;
+      }
       void p.getBoundingClientRect();
       p.style.transition = "stroke-dashoffset .45s ease";
-      p.style.strokeDashoffset = "0";
+      toZero(1);
     }
 
     // hand the wire back to class-based styling (flow dashes / tint)
