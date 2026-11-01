@@ -18,13 +18,13 @@ import Latex from '../../../components/common/Latex.astro';
 
 # Escalating Evals: 72% Fewer LLM Judge Calls
 
-I have been thinking and experimenting a lot with the LLM-as-judge in my evals.
-One thing that has been on my mind is the price.  I have spent time with [Apo](https://docs.test-apo.online/) to make sure similar judge calls maximize the prompt-cache hits, because when you're running hundreds or thousands of acceptance checks, the cost starts to matter.
+Most of my evals end with the same expensive step: an LLM judge reads what the agent produced and rules pass or fail. When you're running hundreds or thousands of acceptance checks, the cost starts to matter. I have spent time with [Apo](https://docs.test-apo.online/), the open-source agent-testing tool I build, making sure similar judge calls maximize the prompt-cache hits.
+
 But there is an even cheaper way than cached calls:
 
 **Not making the call at all!**
 
-In my Jev-as-judge [blog](https://www.samikuikka.com/en/blog/jev-as-judge/) I talked about how to use Jev as a confidence signal besides the LLM-as-judge. However, we can also use it as a replacement for the high confidence checks. This way we can escalate the harder checks to the LLM-as-judge and keep high confidence checks only on Jev.
+A new class of tiny decision models can help here. I use Jev from [TypeSafe AI](https://typesafe.ai/), which returns a verdict plus a calibrated confidence for roughly a hundredth of a cent per check. Across my 2,094 real checks, when it answers with confidence of 0.95 or higher, it agrees with my full LLM judge 99.5% of the time. In my Jev-as-judge [blog](https://www.samikuikka.com/en/blog/jev-as-judge/) I used it as a confidence signal besides the LLM-as-judge, but we can also use it as a replacement for the high confidence checks. This way we can escalate the harder checks to the LLM-as-judge and keep high confidence checks only on Jev.
 
 And this blog is about that. How it helps? How is the output quality? How it compares to the old way of handling?
 
@@ -40,6 +40,8 @@ So the question is, why not just use Jev in these situations, why I'm paying for
 And that is exactly what my new Apo judge mode is about: Escalating to the LLM when it is needed, keeping Jev as initial scorer.
 
 In my testing, 72% of all the checks were these confident answers, so we can make most of the checks that run shown with only the Jev check on the tests I previously did. This is massive savings on money, around 70% cheaper judging overall by removing the 72% of the checks with the Jev only result.
+
+That 72% comes from my own suite, and the total judging bill for all 2,094 checks was $0.20. Your number depends on what your checks ask. Mine are mostly read-off checks, does the deliverable contain the right thing, which is exactly the kind a confident cheap model settles. Checks that ask for a derived judgment should always go to the full judge.
 
 And that is the new Apo mode:
 
@@ -79,7 +81,7 @@ I find this very convincing: roughly 70% cheaper judging, while at most 0.4% of 
 
 ## Try It Out
 
-The new mode is now in Apo! And I'm quite hyped about it, I can get the cost of the judging much lower, without losing much of the quality.
+The new mode is now in [Apo](https://docs.test-apo.online/)! And I'm quite hyped about it, I can get the cost of the judging much lower, without losing much of the quality.
 
 But it's not by default. I still believe that running both can be helpful, even if the current data that shows it is convincing.
 
