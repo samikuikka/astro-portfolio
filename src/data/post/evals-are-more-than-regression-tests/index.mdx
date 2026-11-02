@@ -129,3 +129,15 @@ Now, after the changes, the Apo tests start to go green:
 This type of behaviour: steering towards your wanted end goal with the evals is the frontier many eval platforms want to be in. With the Apo, I have put the capability testing (acceptance testing) at the forefront for the framework, it is designed for this, creating the test that tells the behaviour we want and improve the system until it holds.
 
 Evals can fail, and they even should fail when people using them are trying to push the frontier. And what's great about these failing tests is that when we finally implement the feature, it automatically becomes regression test that we can check the functionality still works later!
+
+To see a verdict yourself, the fastest path is a recorded agent session evaluated by the real test suite, no API key, no account (Node 22 or 24):
+
+```bash
+npm install -g @apo-ai/cli
+git clone https://github.com/samikuikka/apo.git && cd apo
+pnpm install --filter @apo/example-service...
+cd apps/example-service/e2e/agent-task-demo
+apo task run data-extraction-replay --dir ./tasks/ai-sdk-agent
+```
+
+That prints a `PASS` with the check breakdown in about half a second. From there: [docs.test-apo.online](https://docs.test-apo.online/)

@@ -278,6 +278,16 @@ If the harness can run the real system, expose what happened, judge the outcome,
 
 Recently, I find myself reviewing changes to `eval.ts` more carefully than changes to the implementation itself.
 
-You can try all this yourself! Apo is open-source and free: [docs.test-apo.online](https://docs.test-apo.online/)
+You can try all this yourself! Apo is open-source and free. The fastest path is a recorded agent session evaluated by the real test suite, no API key, no account (Node 22 or 24):
+
+```bash
+npm install -g @apo-ai/cli
+git clone https://github.com/samikuikka/apo.git && cd apo
+pnpm install --filter @apo/example-service...
+cd apps/example-service/e2e/agent-task-demo
+apo task run data-extraction-replay --dir ./tasks/ai-sdk-agent
+```
+
+That prints a `PASS` with the check breakdown in about half a second. From there: [docs.test-apo.online](https://docs.test-apo.online/)
 
 <LinkCard url="https://docs.test-apo.online/" />

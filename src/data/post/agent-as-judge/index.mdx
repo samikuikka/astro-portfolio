@@ -174,3 +174,15 @@ This makes a good tiered system for tests: deterministic --> LLM-as-judge --> Ag
 Similarly to my previous Jev blog, what we want to do is do the easy things cheaply, and focus on the things that are hard.
 
 Finally, Apo now has a native way for agent-as-judges with `t.agent()` in the tests. The first version is out, and I intend to spend more time on the tooling for the agent. However, the initial outcomes from it are very good, as this post shows. Go try it out!
+
+Here is the fastest way in, a recorded agent session evaluated by the real test suite, no API key, no account (Node 22 or 24):
+
+```bash
+npm install -g @apo-ai/cli
+git clone https://github.com/samikuikka/apo.git && cd apo
+pnpm install --filter @apo/example-service...
+cd apps/example-service/e2e/agent-task-demo
+apo task run data-extraction-replay --dir ./tasks/ai-sdk-agent
+```
+
+That prints a `PASS` with the check breakdown in about half a second. From there: [docs.test-apo.online](https://docs.test-apo.online/)

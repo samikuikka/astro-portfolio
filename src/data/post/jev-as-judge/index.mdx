@@ -104,3 +104,17 @@ The signal from the Jev is too good to leave out: now the Jev signal is part of 
 This opens up a lot of possibilities. For example, for each run result we could now show where the confidence is low, or where the LLM-as-judge and the Jev disagree, and use that as a signal for the coding agent to improve the eval.
 
 And when we talk about Jev, we say it's a "System One" model. Well, we could then use the signal from the "System One" to do a more thorough pass with the "System Two" for example, use Agent-as-Judge for the checks with low confidence instead of LLM-as-judge. Then we could get the best of both worlds: cheap checks for the high-confidence cases, and more thorough analysis on the tasks where confidence is low. So many possibilities have opened up recently, can't wait to get these into Apo.
+
+## Try the evals yourself
+
+Want to run these checks on your own machine? The fastest path is a recorded agent session evaluated by the real test suite, no API key, no account (Node 22 or 24):
+
+```bash
+npm install -g @apo-ai/cli
+git clone https://github.com/samikuikka/apo.git && cd apo
+pnpm install --filter @apo/example-service...
+cd apps/example-service/e2e/agent-task-demo
+apo task run data-extraction-replay --dir ./tasks/ai-sdk-agent
+```
+
+That prints a `PASS` with the check breakdown in about half a second. From there: [docs.test-apo.online](https://docs.test-apo.online/)

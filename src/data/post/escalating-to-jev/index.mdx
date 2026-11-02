@@ -86,3 +86,15 @@ The new mode is now in [Apo](https://docs.test-apo.online/)! And I'm quite hyped
 But it's not by default. I still believe that running both can be helpful, even if the current data that shows it is convincing.
 
 But all this has to do with the quality of the checks. If the LLM-as-judge checks are done well, the escalation rate will get higher and higher, and we can enjoy cheaper evals!
+
+If you want to see what these checks look like running for real, the fastest path is a recorded agent session evaluated by the real test suite, no API key, no account (Node 22 or 24):
+
+```bash
+npm install -g @apo-ai/cli
+git clone https://github.com/samikuikka/apo.git && cd apo
+pnpm install --filter @apo/example-service...
+cd apps/example-service/e2e/agent-task-demo
+apo task run data-extraction-replay --dir ./tasks/ai-sdk-agent
+```
+
+That prints a `PASS` with the check breakdown in about half a second. From there: [docs.test-apo.online](https://docs.test-apo.online/)
