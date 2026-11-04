@@ -3,12 +3,15 @@ draft: false
 publishDate: 2026-10-08T00:00:00Z
 title: "Engineering Cheaper LLM Evals"
 excerpt: "Engineering solutions I have found when trying to implement a cheap way to do thousands of eval checks. From prompt structures and its cache points to the Jev and escalation modes for evals."
-image: ""
+image: "./cascade-card.png"
 tags:
   - Evals
   - Apo
   - LLM-as-judge
 ---
+
+
+import TryItFooter from "../../../components/blog/TryItFooter.astro";
 
 # Engineering Cheaper LLM Evals
 
@@ -208,3 +211,7 @@ So you can use the wanted compute for each check, deterministic for cheap ones, 
 
 
 All of these together aim to make Apo a cheap and accurate way to run your evals, no matter how hard your checks are.
+
+## Try the evals yourself
+
+<TryItFooter />

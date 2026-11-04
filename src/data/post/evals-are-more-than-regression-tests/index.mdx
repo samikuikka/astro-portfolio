@@ -11,6 +11,8 @@ tags:
 import Tweet from "../../../components/blog/Tweet.astro";
 import TerminalDemo from "../../../components/blog/TerminalDemo.astro";
 
+import TryItFooter from "../../../components/blog/TryItFooter.astro";
+
 # Defining Future Agent Capabilities with Evals
 
 I got some thoughts from the discussions that have happened these days in the X about evals:
@@ -130,14 +132,4 @@ This type of behaviour: steering towards your wanted end goal with the evals is 
 
 Evals can fail, and they even should fail when people using them are trying to push the frontier. And what's great about these failing tests is that when we finally implement the feature, it automatically becomes regression test that we can check the functionality still works later!
 
-To see a verdict yourself, the fastest path is a recorded agent session evaluated by the real test suite, no API key, no account (Node 22 or 24):
-
-```bash
-npm install -g @apo-ai/cli
-git clone https://github.com/samikuikka/apo.git && cd apo
-pnpm install --filter @apo/example-service...
-cd apps/example-service/e2e/agent-task-demo
-apo task run data-extraction-replay --dir ./tasks/ai-sdk-agent
-```
-
-That prints a `PASS` with the check breakdown in about half a second. From there: [docs.test-apo.online](https://docs.test-apo.online/)
+<TryItFooter />

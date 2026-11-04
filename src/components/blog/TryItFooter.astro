@@ -1,0 +1,95 @@
+---
+/**
+ * TryItFooter — the small standing ending for apo posts.
+ *
+ * Two plain action rows: run the demo in your terminal, or watch it in the
+ * browser. No install commands here. The full setup lives in one canonical
+ * place, the README's Try it anchor, so the posts cannot drift from it.
+ *
+ * Same family as LinkCard / TerminalDemo / CodeBlock: self-themed dark
+ * panel, high contrast in both site color modes, not-prose to escape the
+ * typography container.
+ */
+import { Icon } from "astro-icon/components";
+---
+
+<div class="tf not-prose">
+	<span class="tf__label">Try it yourself</span>
+	<div class="tf__links">
+		<a class="tf__link" href="https://github.com/samikuikka/apo#try-it">
+			<span class="tf__action">Run it in your terminal</span>
+			<span class="tf__note">no API key, no account</span>
+			<Icon name="tabler:external-link" aria-hidden="true" />
+		</a>
+		<a class="tf__link" href="https://test-apo.online/demo">
+			<span class="tf__action">Watch it in the browser</span>
+			<Icon name="tabler:external-link" aria-hidden="true" />
+		</a>
+	</div>
+</div>
+
+<style>
+	.tf {
+		margin: 1.75rem 0 0.5rem;
+		padding: 0.9rem 1rem;
+		border: 1px solid #232838;
+		border-radius: 0.5rem;
+		background: #0b0e16;
+		font-family: var(--aw-font-sans, ui-sans-serif, system-ui, sans-serif);
+	}
+
+	.tf__label {
+		display: inline-block;
+		margin-bottom: 0.55rem;
+		color: #6b7488;
+		font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", monospace;
+		font-size: 0.65rem;
+		font-weight: 500;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.tf__links {
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+	}
+
+	.tf__link {
+		display: flex;
+		align-items: center;
+		gap: 0.55rem;
+		padding: 0.45rem 0.6rem;
+		border: 1px solid #232838;
+		border-radius: 0.375rem;
+		text-decoration: none;
+		transition: border-color 150ms ease;
+	}
+
+	.tf__link:hover {
+		border-color: #3a4154;
+	}
+
+	.tf__action {
+		color: #e6e9f2;
+		font-size: 0.85rem;
+	}
+
+	.tf__note {
+		color: #6b7488;
+		font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", monospace;
+		font-size: 0.68rem;
+	}
+
+	.tf__link :global(svg) {
+		margin-left: auto;
+		width: 0.8rem;
+		height: 0.8rem;
+		flex-shrink: 0;
+		color: #6b7488;
+	}
+
+	.tf__link:hover :global(svg) {
+		color: #8b93a7;
+	}
+</style>

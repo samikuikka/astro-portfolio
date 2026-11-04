@@ -14,6 +14,8 @@ import glmImage from "./GLM.png";
 import mermaidDiagram from "./mermaid-diagram.png";
 import outputVideo from "./output.mp4";
 
+import TryItFooter from "../../../components/blog/TryItFooter.astro";
+
 # Building a Harness: How I Got Agents to Verify Their Own Code
 
 I wanted to see how far I could push code generation without ever understanding what the agents were writing.
@@ -212,3 +214,7 @@ The models are already good enough to generate code. What was missing for me was
 Building that harness is a progressive process. You start with agents that can write code, then you give them tools to test it, then you give them eyes to see it, then you give them a ground truth to compare against. Each addition makes the system more autonomous and reduces your role from reviewer to orchestrator.
 
 The DOCX editor proves this works for a non-trivial project. Not perfectly, but well enough to be useful. And the approach generalizes to any project where you can define behavioral specs and compare output against a reference. If you can't measure correctness automatically, the loop breaks. But when you can, agents can run for hours without you.
+
+## Try the harness yourself
+
+<TryItFooter />
